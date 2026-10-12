@@ -1,17 +1,33 @@
+import { useEffect, useState } from 'react';
 import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from './storage/supabaseRepository';
 import { ToastProvider } from './ui/ds';
+import { ErrorBoundary, RouteError } from './ui/ErrorScreen';
 import { Styleguide } from './ui/Styleguide';
+import { Login } from './ui/features/auth/Login';
+import { Home } from './ui/features/home/Home';
 
-// S0: only the styleguide exists. App screens come after the design-system OK (blueprint §6).
 const router = createBrowserRouter([
+  { path: '/', element: <Home />, errorElement: <RouteError /> },
   { path: '/styleguide', element: <Styleguide /> },
-  { path: '*', element: <Navigate to="/styleguide" replace /> },
+  { path: '*', element: <Navigate to="/" replace /> },
 ]);
 
 export default function App() {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setTimeout(() => setSession(s), 0));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+  if (session === undefined) return null;
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
   return (
-    <ToastProvider>
-      <RouterProvider router={router} />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        {!session && path !== '/styleguide' ? <Login /> : <RouterProvider router={router} />}
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

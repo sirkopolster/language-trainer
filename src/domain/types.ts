@@ -1,0 +1,20 @@
+// Domain types — mirror docs/data-model.md. Code English, UI German.
+
+export interface Profile { id: string; name: string; settings: { keepPhotos: boolean }; createdAt: string }
+
+export type TestStatus = 'setup' | 'active' | 'done';
+export interface Test { id: string; profileId: string; name: string; langFrom: string; langTo: string; testDate: string | null; format: TestFormat | null; status: TestStatus; createdAt: string }
+
+export type SectionType = 'translate' | 'gap' | 'choice' | 'match' | 'other';
+export interface TestSection { type: SectionType; direction: string; items: number; points: number; label?: string }
+export interface TestFormat { sections: TestSection[]; totalPoints: number; passMark: number | null }
+
+export interface Unit { id: string; testId: string; label: string; sort: number }
+
+export type WordStatus = 'review' | 'active' | 'retired';
+export interface Word { id: string; unitId: string; source: string; target: string; example: string | null; priority: boolean; status: WordStatus }
+
+export interface WordState { wordId: string; box: number; dueAt: string; streak: number; lapses: number; lastResult: boolean | null }
+
+export interface Streak { profileId: string; current: number; longest: number; lastDay: string | null }
+export interface Award { id: string; profileId: string; kind: 'star' | 'crown'; refId: string | null; awardedAt: string }

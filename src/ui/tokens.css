@@ -1,0 +1,53 @@
+/* SnapLearn design tokens — the only place where raw values live. Name by role, never by colour. */
+:root {
+  /* colour */
+  --primary: #5b5bd6;
+  --primary-strong: #4646b8;
+  --primary-soft: #e9e9fb;
+  --accent: #ff8a3d;        /* stars, crowns, celebration */
+  --accent-soft: #fff1e6;
+  --good: #22a06b;
+  --good-soft: #e3f6ee;
+  --warn: #c77700;
+  --warn-soft: #fff4dc;
+  --bad: #d9344a;
+  --bad-soft: #fde8eb;
+  --bg: #f6f6fb;
+  --card: #ffffff;
+  --text: #1c1c28;
+  --muted: #6b6b80;
+  --line: #e3e3ee;
+  --overlay: rgba(28, 28, 40, .45);
+
+  /* typography */
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fs-xs: .75rem;   /* 12 */
+  --fs-sm: .875rem;  /* 14 */
+  --fs-md: 1rem;     /* 16 */
+  --fs-lg: 1.25rem;  /* 20 */
+  --fs-xl: 1.5rem;   /* 24 */
+  --fs-2xl: 2rem;    /* 32 */
+  --lh: 1.45;
+
+  /* spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 16px;
+  --s-4: 24px;
+  --s-5: 32px;
+
+  /* radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* shadow */
+  --shadow-1: 0 1px 2px rgba(28, 28, 40, .06), 0 1px 6px rgba(28, 28, 40, .05);
+  --shadow-2: 0 8px 24px rgba(28, 28, 40, .16);
+
+  /* motion */
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --t-fast: 150ms;
+  --t-base: 250ms;
+}

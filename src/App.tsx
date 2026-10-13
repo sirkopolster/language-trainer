@@ -10,12 +10,14 @@ import { Home } from './ui/features/home/Home';
 import { ProfileScreen } from './ui/features/profile/ProfileScreen';
 import { TestScreen } from './ui/features/test/TestScreen';
 import { ReviewScreen } from './ui/features/review/ReviewScreen';
+import { LearnScreen } from './ui/features/learn/LearnScreen';
 
 const router = createBrowserRouter([
   { path: '/', element: <Home />, errorElement: <RouteError /> },
   { path: '/p/:profileId', element: <ProfileScreen />, errorElement: <RouteError /> },
   { path: '/t/:testId', element: <TestScreen />, errorElement: <RouteError /> },
   { path: '/t/:testId/review', element: <ReviewScreen />, errorElement: <RouteError /> },
+  { path: '/t/:testId/learn', element: <LearnScreen />, errorElement: <RouteError /> },
   { path: '/styleguide', element: <Styleguide /> },
   { path: '*', element: <Navigate to="/" replace /> },
 ]);

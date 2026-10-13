@@ -116,6 +116,26 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .tab svg { width: 24px; height: 24px; }
 .tab-active { color: var(--primary); }
 
+/* ---------- Learning exercises (S3) ---------- */
+.choice { display: block; width: 100%; text-align: left; padding: var(--s-3); border: 2px solid var(--line); border-radius: var(--r-md); background: var(--card); font-size: var(--fs-md); cursor: pointer; }
+.choice:disabled { cursor: default; }
+.choice-picked { border-color: var(--primary); }
+.choice-right { border-color: var(--good); background: var(--good-soft); }
+.choice-wrong { border-color: var(--bad); background: var(--bad-soft); }
+.tile-slot { min-height: 56px; display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; padding: var(--s-2); border: 2px dashed var(--line); border-radius: var(--r-md); }
+.tile-bank { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.tile { padding: var(--s-2) var(--s-3); border: 2px solid var(--line); border-radius: var(--r-sm); background: var(--card); font-size: var(--fs-md); cursor: pointer; }
+.tile:disabled { opacity: .3; cursor: default; }
+.tile-used { border-color: var(--primary); background: var(--primary-soft); opacity: 1; }
+.gap-line { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-2); align-items: center; font-size: var(--fs-md); line-height: 2.2; }
+.gap-input { display: inline-block; min-height: 40px; padding: 0 var(--s-2); font-size: var(--fs-md); }
+.feedback { border: 2px solid var(--line); }
+.feedback-good { border-color: var(--good); background: var(--good-soft); }
+.feedback-warn { border-color: var(--warn); background: var(--warn-soft); }
+.feedback-bad { border-color: var(--bad); background: var(--bad-soft); }
+.feedback .btn { margin-top: var(--s-3); }
+.diff-bad { color: var(--bad); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; }
+
 /* ---------- Photo grid (S1) ---------- */
 .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
 .thumb { position: relative; aspect-ratio: 3 / 4; border-radius: var(--r-md); overflow: hidden; background: var(--primary-soft); }

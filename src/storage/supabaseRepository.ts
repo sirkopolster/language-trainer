@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Photo, Profile, Test, Unit, Word } from '../domain/types';
+import type { Photo, Profile, Test, Unit, Word, WordState } from '../domain/types';
 import type { Repository } from './repository';
 
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string, import.meta.env.VITE_SUPABASE_ANON_KEY as string);
@@ -9,6 +9,7 @@ type TestRow = { id: string; profile_id: string; name: string; lang_from: string
 
 type UnitRow = { id: string; test_id: string; label: string; sort: number };
 type WordRow = { id: string; unit_id: string; source: string; target: string; example: string | null; priority: boolean; status: Word['status'] };
+type StateRow = { word_id: string; box: number; due_at: string; streak: number; lapses: number; last_result: boolean | null };
 type PhotoRow = { id: string; test_id: string; kind: Photo['kind']; storage_path: string; status: Photo['status']; created_at: string };
 
 const toProfile = (r: ProfileRow): Profile => ({ id: r.id, name: r.name, settings: { keepPhotos: !!r.settings?.keep_photos }, createdAt: r.created_at });
@@ -16,6 +17,7 @@ const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name:
 
 const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort });
 const toWord = (r: WordRow): Word => ({ id: r.id, unitId: r.unit_id, source: r.source, target: r.target, example: r.example, priority: r.priority, status: r.status });
+const toState = (r: StateRow): WordState => ({ wordId: r.word_id, box: r.box, dueAt: r.due_at, streak: r.streak, lapses: r.lapses, lastResult: r.last_result });
 const toPhoto = (r: PhotoRow): Photo => ({ id: r.id, testId: r.test_id, kind: r.kind, storagePath: r.storage_path, status: r.status, createdAt: r.created_at });
 
 // crypto.randomUUID exists only in secure contexts (https/localhost); the phone test over http://192.168… needs the fallback
@@ -137,6 +139,19 @@ export const supabaseRepository: Repository = {
     fail(rm.error);
     const up = await supabase.from('photos').update({ status: 'deleted' }).in('id', data.map((p) => p.id));
     fail(up.error);
+  },
+  async listWordStates(testId) {
+    const { data, error } = await supabase.from('word_state').select('*, words!inner(unit_id, units!inner(test_id))').eq('words.units.test_id', testId);
+    fail(error);
+    return (data as StateRow[]).map(toState);
+  },
+  async saveWordState(s) {
+    const { error } = await supabase.from('word_state').upsert({ word_id: s.wordId, box: s.box, due_at: s.dueAt, streak: s.streak, lapses: s.lapses, last_result: s.lastResult, updated_at: new Date().toISOString() });
+    fail(error);
+  },
+  async addSession(s) {
+    const { error } = await supabase.from('sessions').insert({ profile_id: s.profileId, kind: s.kind, unit_id: s.unitId, started_at: s.startedAt, ended_at: new Date().toISOString(), items: s.items, score: s.score ?? null, max_score: s.maxScore ?? null });
+    fail(error);
   },
   async exportAll() {
     const out: Record<string, unknown[]> = {};

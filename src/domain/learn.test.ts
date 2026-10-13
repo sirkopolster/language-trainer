@@ -1,0 +1,104 @@
+import { describe, expect, it } from 'vitest';
+import { compare, levenshtein, normalize } from './compare';
+import { applyAnswer, composeSession, exerciseFor, newState } from './scheduler';
+import { fillGaps, makeChoice, makeGaps, makeTiles } from './exercises';
+import type { Word } from './types';
+
+const now = new Date('2026-10-13T18:00:00Z');
+const day = (n: number) => new Date(now.getTime() + n * 86_400_000);
+const w = (id: string, target: string, unitId = 'u1', priority = false): Word => ({ id, unitId, source: `de ${id}`, target, example: null, priority, status: 'active' });
+const seq = (...vals: number[]) => { let i = 0; return () => vals[i++ % vals.length]; };
+
+describe('compare', () => {
+  it('normalises case, punctuation and apostrophes', () => {
+    expect(normalize("Don’t feed the Animals!")).toBe("don't feed the animals");
+  });
+  it('exact / hint / close / wrong', () => {
+    expect(compare('The elephant is big.', 'The elephant is big.').result).toBe('exact');
+    const hint = compare('the elephant is big', 'The elephant is big.');
+    expect(hint.result).toBe('hint');
+    expect(hint.correct).toBe(true);
+    expect(hint.diff.filter((d) => d.kind === 'bad').map((d) => d.text)).toEqual(['The', 'big.']);
+    expect(compare('The elefant is big.', 'The elephant is big.').result).toBe('close');
+    const wrong = compare('The dog is big.', 'The elephant is big.');
+    expect(wrong.result).toBe('wrong');
+    expect(wrong.diff.filter((d) => d.kind === 'bad').map((d) => d.text)).toEqual(['elephant']);
+  });
+  it('allows one edit per 10 characters, minimum one', () => {
+    expect(levenshtein('kitten', 'sitting')).toBe(3);
+    expect(compare('I go', 'I do').result).toBe('close');
+    expect(compare('I gx', 'I do').result).toBe('wrong');
+  });
+});
+
+describe('scheduler', () => {
+  it('promotes after one correct answer, two for priority, with the level interval', () => {
+    let s = applyAnswer(newState('a', now), true, false, now);
+    expect(s.box).toBe(1);
+    expect(s.dueAt).toBe(day(1).toISOString());
+    let p = applyAnswer(newState('b', now), true, true, now);
+    expect(p.box).toBe(0);
+    expect(p.streak).toBe(1);
+    p = applyAnswer(p, true, true, now);
+    expect(p.box).toBe(1);
+    s = applyAnswer({ ...s, box: 3 }, true, false, now);
+    expect(s.box).toBe(4);
+    expect(s.dueAt).toBe(day(14).toISOString());
+  });
+  it('wrong goes one level down and is due now, never below 0', () => {
+    const s = applyAnswer({ ...newState('a', now), box: 2, streak: 1 }, false, false, now);
+    expect(s.box).toBe(1);
+    expect(s.streak).toBe(0);
+    expect(s.lapses).toBe(1);
+    expect(s.dueAt).toBe(now.toISOString());
+    expect(applyAnswer(newState('a', now), false, false, now).box).toBe(0);
+  });
+  it('maps levels to exercises', () => {
+    expect([0, 1, 2, 3, 4, 5].map(exerciseFor)).toEqual(['choice', 'tiles', 'gapsHint', 'gaps', 'write', 'write']);
+  });
+  it('composes due first, then max 5 new, and interleaves units', () => {
+    const words = [w('d1', 'x', 'u1'), w('d2', 'y', 'u1'), ...Array.from({ length: 8 }, (_, i) => w(`n${i}`, `n${i}`, i % 2 ? 'u1' : 'u2'))];
+    const states = new Map([
+      ['d1', { ...newState('d1', now), box: 2, dueAt: day(-2).toISOString() }],
+      ['d2', { ...newState('d2', now), box: 1, dueAt: day(-1).toISOString() }],
+    ]);
+    const s = composeSession(words, states, now, { size: 10, maxNew: 5, rng: seq(0) });
+    expect(s).toHaveLength(7);
+    expect(s[0].word.id).toBe('d1');
+    expect(s.filter((x) => x.state.box === 0)).toHaveLength(5);
+    for (let i = 1; i < s.length; i++) if (s[i].word.unitId === s[i - 1].word.unitId) expect(s.slice(i).every((x) => x.word.unitId === s[i].word.unitId)).toBe(true);
+  });
+  it('skips items that are not due and secure items answered correctly', () => {
+    const words = [w('a', 'x'), w('b', 'y')];
+    const states = new Map([
+      ['a', { ...newState('a', now), box: 2, dueAt: day(1).toISOString() }],
+      ['b', { ...newState('b', now), box: 5, dueAt: day(-1).toISOString(), lastResult: true }],
+    ]);
+    expect(composeSession(words, states, now, { size: 10, maxNew: 5 })).toHaveLength(0);
+  });
+});
+
+describe('exercises', () => {
+  const pool = [w('a', 'The elephant is big.'), w('b', 'The monkey is small.'), w('c', 'I like the zoo.', 'u2'), w('d', 'We feed the cage.')];
+  it('choice has 4 unique options including the answer', () => {
+    const c = makeChoice(pool[0], pool, seq(0.3, 0.7, 0.1));
+    expect(c.options).toHaveLength(4);
+    expect(new Set(c.options).size).toBe(4);
+    expect(c.options).toContain('The elephant is big.');
+  });
+  it('tiles contain every word of the answer plus 2 distractors', () => {
+    const t = makeTiles(pool[0], pool, seq(0.5, 0.2, 0.9));
+    expect(t.tiles).toHaveLength(6);
+    for (const x of 'The elephant is big.'.split(' ')) expect(t.tiles).toContain(x);
+  });
+  it('gaps hit content words; hint shows the first letter; fillGaps rebuilds', () => {
+    const g = makeGaps(pool[0], true, seq(0.1, 0.9));
+    const gaps = g.tokens.filter((t) => t.gap);
+    expect(gaps.length).toBeLessThanOrEqual(2);
+    expect(gaps.every((t) => t.hint && t.hint.length === 1)).toBe(true);
+    expect(gaps.every((t) => !['The', 'is'].includes(t.text))).toBe(true);
+    const inputs = g.tokens.map((t) => (t.gap ? t.text : ''));
+    expect(fillGaps(g, inputs)).toBe('The elephant is big.');
+    expect(makeGaps(pool[0], false, seq(0.1)).tokens.filter((t) => t.gap).every((t) => !t.hint)).toBe(true);
+  });
+});

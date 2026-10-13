@@ -1,8 +1,9 @@
-// Smoke test: sign-up/login → profile → test from home → upload 2 photos → delete 1 → home lists it → backup. Usage: node scripts/smoke.mjs [baseUrl]
+// Smoke test: sign-up/login → profile → test from home → upload 2 photos → delete 1 → home lists it → backup → seeded learn session (choice + write, wrong then right). Usage: node scripts/smoke.mjs [baseUrl]
 // Rules (blueprint §7): data-testid selectors, waitFor not sleeps, one step per feature, cleanup in finally.
 import { chromium } from 'playwright';
 import { env } from './env.mjs';
 import { qaCleanup } from './qa-cleanup.mjs';
+import { qaSeed, SENTENCES } from './qa-seed.mjs';
 
 const base = (process.argv[2] ?? 'http://localhost:4311').replace(/\/+$/, '');
 const steps = [];
@@ -57,6 +58,25 @@ try {
     await page.getByText('Backup (JSON)').click();
     const name = (await dl).suggestedFilename();
     if (!name.startsWith('snaplearn-backup-')) throw new Error('unexpected file ' + name);
+  });
+  await step('learn: choice right, write wrong then retype', async () => {
+    await qaCleanup();
+    const seed = await qaSeed({ levels: [0, 4] });
+    await page.goto(`${base}/t/${seed.testId}`);
+    await t('learn').click();
+    for (let i = 0; i < 3; i++) {
+      await t('prompt').waitFor();
+      const prompt = await t('prompt').innerText();
+      const ans = SENTENCES.find(([de]) => de === prompt)[1];
+      if (await t('option').count()) { await page.getByTestId('option').filter({ hasText: ans }).first().click(); await page.getByText('Richtig!').waitFor(); }
+      else if (await t('write').count()) {
+        const retry = (await page.locator('.appbar-title').innerText()).includes('Nochmal');
+        await t('write').fill(retry ? ans : 'completely wrong'); await t('submit').click();
+        await (retry ? page.getByText('Richtig!') : page.getByText('Noch nicht')).waitFor();
+      } else if (await t('tile').count()) { for (const w of ans.split(' ')) await page.getByTestId('tile').filter({ hasText: w }).first().click(); await t('submit').click(); await t('feedback').waitFor(); }
+      else { const gaps = await t('gap').all(); for (const g of gaps) await g.fill('x'); await t('submit').click(); await t('feedback').waitFor(); }
+      await t('next').click();
+    }
   });
   if (errors.length) throw new Error('console errors: ' + errors.join(' | '));
   console.log(steps.join('\n'), '\nSMOKE OK', base);

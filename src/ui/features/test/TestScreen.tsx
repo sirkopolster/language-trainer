@@ -23,8 +23,14 @@ export function TestScreen() {
   const [pending, setPending] = useState<{ kind: PhotoKind; n: number }>({ kind: 'vocab', n: 0 });
   const [extracting, setExtracting] = useState<string | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
+  const [learn, setLearn] = useState<{ active: number; due: number } | null>(null);
 
-  const load = () => Promise.all([repo.listPhotos(testId), repo.listWords(testId)]).then(([p, w]) => { setPhotos(p); setReviewCount(w.filter((x) => x.status === 'review').length); }).catch((e: Error) => toast(e.message, 'bad'));
+  const load = () => Promise.all([repo.listPhotos(testId), repo.listWords(testId), repo.listWordStates(testId)]).then(([p, w, st]) => {
+    setPhotos(p); setReviewCount(w.filter((x) => x.status === 'review').length);
+    const now = new Date(); const states = new Map(st.map((s) => [s.wordId, s]));
+    const active = w.filter((x) => x.status === 'active');
+    setLearn({ active: active.length, due: active.filter((x) => { const s = states.get(x.id); return !s || (new Date(s.dueAt) <= now && !(s.box === 5 && s.lastResult)); }).length });
+  }).catch((e: Error) => toast(e.message, 'bad'));
   useEffect(() => { repo.getTest(testId).then(setTest).catch((e: Error) => toast(e.message, 'bad')); load(); }, [testId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     photos.filter((p) => !urls[p.id]).forEach((p) => repo.photoUrl(p).then((u) => setUrls((s) => ({ ...s, [p.id]: u }))).catch(() => undefined));
@@ -76,6 +82,14 @@ export function TestScreen() {
     <>
       <AppBar title={test?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => (test ? nav(`/p/${test.profileId}`) : nav('/'))}><BackIcon /></button>} />
       <main className="page stack">
+        {learn && learn.active > 0 && (
+          <Card accent>
+            <div className="row"><div className="grow">
+              <div className="h3">{learn.due > 0 ? `${learn.due} Sätze fällig` : 'Alles gelernt für heute'}</div>
+              <div className="text-sm muted">{learn.active} Sätze im Training</div>
+            </div><Button data-testid="learn" onClick={() => nav(`/t/${testId}/learn`)} disabled={learn.due === 0}>Lernen</Button></div>
+          </Card>
+        )}
         {SECTIONS.map((s) => (
           <PhotoSection key={s.kind} {...s} photos={photos.filter((p) => p.kind === s.kind)} urls={urls} busy={pending.kind === s.kind ? pending.n : 0} extracting={extracting} onFiles={(f) => upload(s.kind, f)} onRemove={remove} onExtract={() => extract(s.kind)} />
         ))}

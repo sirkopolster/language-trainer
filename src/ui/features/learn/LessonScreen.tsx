@@ -122,6 +122,7 @@ export function LessonScreen() {
         {phase.part + 1 < PARTS.length
           ? <Button block data-testid="part-next" onClick={() => startPart(phase.part + 1)}>Runde {phase.part + 2}: {PARTS[phase.part + 1].label}</Button>
           : <Button block data-testid="part-next" onClick={() => setPhase({ kind: 'lessonDone', crown: lessonProgress(awards, unitId, n).crown, total: lessonProgress(awards, unitId, n).total })}>Ergebnis</Button>}
+        <Button block variant="secondary" data-testid="part-repeat" onClick={() => startPart(phase.part)}>{phase.stars === 3 ? 'Runde nochmal' : 'Runde wiederholen für mehr Sterne'}</Button>
         <Button block variant="ghost" onClick={() => nav(`/t/${testId}`)}>Pause</Button>
       </main>
     </>

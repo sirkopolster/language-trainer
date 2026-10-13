@@ -1,4 +1,4 @@
-// Smoke test: sign-up/login → profile → test → upload 2 photos → delete 1 → backup. Usage: node scripts/smoke.mjs [baseUrl]
+// Smoke test: sign-up/login → profile → test from home → upload 2 photos → delete 1 → home lists it → backup. Usage: node scripts/smoke.mjs [baseUrl]
 // Rules (blueprint §7): data-testid selectors, waitFor not sleeps, one step per feature, cleanup in finally.
 import { chromium } from 'playwright';
 import { env } from './env.mjs';
@@ -32,8 +32,7 @@ try {
     await t('profile-save').click();
     await page.locator('.item-title', { hasText: 'QA Kind' }).waitFor();
   });
-  await step('open profile, add test', async () => {
-    await page.locator('.item-title', { hasText: 'QA Kind' }).click();
+  await step('add test from home', async () => {
     await t('test-add').click();
     await t('test-name').fill('QA Test');
     await t('test-save').click();
@@ -48,8 +47,12 @@ try {
     await t('thumb-delete').first().click();
     await page.waitForFunction(() => document.querySelectorAll('[data-testid="thumb-delete"]').length === 1);
   });
-  await step('backup download', async () => {
+  await step('home lists the test', async () => {
     await page.goto(base + '/');
+    await page.locator('.item-title', { hasText: 'QA Test' }).waitFor();
+    await page.locator('.item-sub', { hasText: '1 Test' }).waitFor();
+  });
+  await step('backup download', async () => {
     const dl = page.waitForEvent('download');
     await page.getByText('Backup (JSON)').click();
     const name = (await dl).suggestedFilename();

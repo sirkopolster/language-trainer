@@ -40,6 +40,11 @@ export const supabaseRepository: Repository = {
     fail(error);
     return (data as TestRow[]).map(toTest);
   },
+  async listAllTests() {
+    const { data, error } = await supabase.from('tests').select('*').order('created_at', { ascending: false });
+    fail(error);
+    return (data as TestRow[]).map(toTest);
+  },
   async getTest(id) {
     const { data, error } = await supabase.from('tests').select('*').eq('id', id).single();
     fail(error);

@@ -6,6 +6,8 @@ export interface Repository {
   addProfile(name: string): Promise<Profile>;
   deleteProfile(id: string): Promise<void>;
   listTests(profileId: string): Promise<Test[]>;
+  /** all tests the user owns, newest first (home dashboard) */
+  listAllTests(): Promise<Test[]>;
   getTest(id: string): Promise<Test>;
   addTest(profileId: string, t: { name: string; langFrom: string; langTo: string; testDate: string | null }): Promise<Test>;
   listPhotos(testId: string): Promise<Photo[]>;

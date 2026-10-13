@@ -1,21 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Award, Photo, PhotoKind, Test, Unit, Word } from '../../../domain/types';
 import { PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
-import { AppBar, BackIcon, Badge, Button, CameraIcon, Card, CrownIcon, List, ListItem, StarIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, BookIcon, Button, CameraIcon, Card, CrownIcon, EmptyState, List, ListItem, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
 import { resizeToJpeg } from '../photos/resize';
+import { PhotoSection, SECTIONS } from './PhotoSection';
 
 const SECTION_LABEL: Record<string, string> = { translate: 'Übersetzen', gap: 'Lückentext', choice: 'Auswahl', match: 'Zuordnen', other: 'Sonstige' };
+type Tab = 'fotos' | 'lernen' | 'probetest';
+const TABS = [{ id: 'fotos', label: 'Fotos', icon: <CameraIcon /> }, { id: 'lernen', label: 'Lernen', icon: <BookIcon /> }, { id: 'probetest', label: 'Probetest', icon: <TestIcon /> }];
 
-const SECTIONS: { kind: PhotoKind; title: string; hint: string }[] = [
-  { kind: 'vocab', title: 'Vokabelseiten', hint: 'Alle Seiten mit den Vokabeln für diesen Test, eine Seite pro Foto.' },
-  { kind: 'test', title: 'Beispieltest', hint: 'Ein alter Test oder eine Übungsseite, damit die Übungen so aussehen wie der echte Test.' },
-];
-
-/** S1: photos per test. Capture or pick, resize in the browser, upload to the private bucket, thumbnails via signed URL. */
+/** One test: three tabs. Fotos (upload + extraction), Lernen (lessons, review), Probetest (S4). Opens on Lernen once sentences exist. */
 export function TestScreen() {
   const { testId = '' } = useParams();
+  const [params, setParams] = useSearchParams();
   const nav = useNavigate();
   const toast = useToast();
   const [test, setTest] = useState<Test | null>(null);
@@ -40,6 +39,10 @@ export function TestScreen() {
     photos.filter((p) => !urls[p.id]).forEach((p) => repo.photoUrl(p).then((u) => setUrls((s) => ({ ...s, [p.id]: u }))).catch(() => undefined));
   }, [photos]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // default tab: Lernen as soon as sentences exist, Fotos before
+  const tab = (params.get('tab') as Tab | null) ?? (learn === null ? null : learn.active > 0 ? 'lernen' : 'fotos');
+  const setTab = (id: string) => setParams({ tab: id }, { replace: true });
+
   async function upload(kind: PhotoKind, files: FileList | null) {
     const list = Array.from(files ?? []); // copy before any await: the input is reset right after onChange
     if (!list.length) return;
@@ -47,11 +50,8 @@ export function TestScreen() {
     const target = test ?? (await repo.getTest(testId)); // the user can be faster than the first fetch
     let ok = 0;
     for (const f of list) {
-      try {
-        const jpeg = await resizeToJpeg(f);
-        await repo.addPhoto(target, kind, jpeg);
-        ok++;
-      } catch (e) { toast((e as Error).message, 'bad'); }
+      try { await repo.addPhoto(target, kind, await resizeToJpeg(f)); ok++; }
+      catch (e) { toast((e as Error).message, 'bad'); }
       setPending((p) => ({ ...p, n: p.n - 1 }));
       load();
     }
@@ -81,83 +81,72 @@ export function TestScreen() {
 
   const vocab = photos.filter((p) => p.kind === 'vocab').length;
   const sample = photos.filter((p) => p.kind === 'test').length;
+  const allLessons = lessons ? splitLessons(lessons.words) : [];
 
   return (
     <>
-      <AppBar title={test?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => (test ? nav(`/p/${test.profileId}`) : nav('/'))}><BackIcon /></button>} />
-      <main className="page stack">
-        {lessons && lessons.units.map((u) => {
-          const ls = splitLessons(lessons.words).filter((l) => l.unitId === u.id);
-          if (!ls.length) return null;
-          return (
-            <Card key={u.id} title={u.label}>
-              <List>
-                {ls.map((l) => {
-                  const p = lessonProgress(lessons.awards, u.id, l.n);
-                  return <ListItem key={l.n} testId={`lesson-${u.id}-${l.n}`} lead={p.crown ? <span style={{ color: 'var(--accent)' }}><CrownIcon /></span> : <span>{l.n}</span>} title={`Lektion ${l.n}`} sub={p.nextPart === 0 ? `${l.words.length} Sätze · noch nicht begonnen` : p.nextPart < PARTS.length ? `Runde ${p.nextPart + 1} von ${PARTS.length}` : `${p.total} von 15 Sternen`} trail={p.total > 0 ? <span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{p.total}</span> : undefined} onClick={() => nav(`/t/${testId}/lesson/${u.id}/${l.n}`)} />;
-                })}
-              </List>
-            </Card>
-          );
-        })}
-        {learn && learn.active > 0 && learn.due > 0 && lessons && splitLessons(lessons.words).some((l) => lessonProgress(lessons.awards, l.unitId, l.n).nextPart > 0) && (
-          <Card accent>
-            <div className="row"><div className="grow">
-              <div className="h3">{learn.due} Sätze zum Wiederholen</div>
-              <div className="text-sm muted">Gemischt aus allen begonnenen Lektionen</div>
-            </div><Button data-testid="learn" onClick={() => nav(`/t/${testId}/learn`)}>Wiederholen</Button></div>
-          </Card>
-        )}
-        {SECTIONS.map((s) => (
-          <PhotoSection key={s.kind} {...s} photos={photos.filter((p) => p.kind === s.kind)} urls={urls} busy={pending.kind === s.kind ? pending.n : 0} extracting={extracting} onFiles={(f) => upload(s.kind, f)} onRemove={remove} onExtract={() => extract(s.kind)} />
-        ))}
-        {test?.format && (
-          <Card title="Testformat">
-            <div className="stack-sm">
-              {test.format.sections.map((s, i) => <div key={i} className="row-between text-sm"><span>{SECTION_LABEL[s.type]}{s.label ? ` · ${s.label}` : ''}</span><span className="muted">{s.items} Aufgaben · {s.points} P.</span></div>)}
-              <div className="row-between text-sm"><strong>Gesamt</strong><strong>{test.format.totalPoints} Punkte{test.format.passMark ? ` · bestanden ab ${test.format.passMark}` : ''}</strong></div>
-            </div>
-          </Card>
-        )}
-        <Card accent>
-          <div className="row"><CameraIcon /><div className="grow">
-            <div className="h3">Nächster Schritt</div>
-            <div className="text-sm muted">{reviewCount > 0 ? `${reviewCount} Wörter warten auf deine Prüfung.` : vocab === 0 ? 'Zuerst die Vokabelseiten fotografieren.' : photos.some((p) => p.status !== 'extracted') ? 'Fotos auswerten lassen.' : sample === 0 ? 'Noch den Beispieltest fotografieren.' : 'Lernen kommt mit S3.'}</div>
-          </div>{reviewCount > 0 && <Button small onClick={() => nav(`/t/${testId}/review`)}>Prüfen</Button>}</div>
-        </Card>
-      </main>
-    </>
-  );
-}
-
-function PhotoSection({ kind, title, hint, photos, urls, busy, extracting, onFiles, onRemove, onExtract }: { kind: PhotoKind; title: string; hint: string; photos: Photo[]; urls: Record<string, string>; busy: number; extracting: string | null; onFiles: (f: FileList | null) => void; onRemove: (p: Photo) => void; onExtract: () => void }) {
-  const open = photos.filter((p) => p.status !== 'extracted').length;
-  const cam = useRef<HTMLInputElement>(null);
-  const pick = useRef<HTMLInputElement>(null);
-  return (
-    <Card title={`${title}${photos.length ? ` (${photos.length})` : ''}`}>
-      <div className="stack-sm">
-        {photos.length === 0 && busy === 0 && <p className="text-sm muted">{hint}</p>}
-        {(photos.length > 0 || busy > 0) && (
-          <div className="thumbs" data-testid={`thumbs-${kind}`}>
-            {photos.map((p) => (
-              <div key={p.id} className="thumb">
-                {urls[p.id] && <img src={urls[p.id]} alt="" />}
-                <span className="thumb-state">{extracting === p.id ? <Badge tone="primary">liest…</Badge> : p.status === 'extracted' ? <Badge tone="good">✓</Badge> : p.status === 'failed' ? <Badge tone="bad">Fehler</Badge> : null}</span>
-                <button className="thumb-x" data-testid="thumb-delete" aria-label="Foto löschen" onClick={() => onRemove(p)}>×</button>
-              </div>
+      <AppBar title={test?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav('/')}><BackIcon /></button>} />
+      <main className="page stack" style={{ paddingBottom: 'calc(var(--s-5) * 3)' }}>
+        {tab === 'fotos' && (
+          <>
+            {SECTIONS.map((s) => (
+              <PhotoSection key={s.kind} {...s} photos={photos.filter((p) => p.kind === s.kind)} urls={urls} busy={pending.kind === s.kind ? pending.n : 0} extracting={extracting} onFiles={(f) => upload(s.kind, f)} onRemove={remove} onExtract={() => extract(s.kind)} />
             ))}
-            {Array.from({ length: busy }, (_, i) => <div key={`b${i}`} className="thumb thumb-busy">lädt…</div>)}
-          </div>
+            <Card accent>
+              <div className="row"><CameraIcon /><div className="grow">
+                <div className="h3">Nächster Schritt</div>
+                <div className="text-sm muted">{reviewCount > 0 ? `${reviewCount} Wörter warten auf deine Prüfung.` : vocab === 0 ? 'Zuerst die Vokabelseiten fotografieren.' : photos.some((p) => p.status !== 'extracted') ? 'Fotos auswerten lassen.' : sample === 0 ? 'Noch den Beispieltest fotografieren.' : 'Alles da. Ab zum Lernen.'}</div>
+              </div>{reviewCount > 0 ? <Button small onClick={() => nav(`/t/${testId}/review`)}>Prüfen</Button> : learn && learn.active > 0 && photos.every((p) => p.status === 'extracted') ? <Button small onClick={() => setTab('lernen')}>Lernen</Button> : null}</div>
+            </Card>
+          </>
         )}
-        <div className="row">
-          <Button block variant={open ? 'secondary' : 'primary'} onClick={() => cam.current?.click()} disabled={busy > 0 || !!extracting}><CameraIcon /> Foto</Button>
-          <Button block variant="secondary" onClick={() => pick.current?.click()} disabled={busy > 0 || !!extracting}>Galerie</Button>
-        </div>
-        {open > 0 && <Button block data-testid={`extract-${kind}`} onClick={onExtract} disabled={busy > 0 || !!extracting}>{extracting ? 'Wird gelesen…' : open === 1 ? '1 Foto auswerten' : `${open} Fotos auswerten`}</Button>}
-        <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
-        <input ref={pick} type="file" accept="image/*" multiple hidden data-testid={`pick-${kind}`} onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
-      </div>
-    </Card>
+        {tab === 'lernen' && lessons && (
+          allLessons.length === 0 ? (
+            <Card flat><EmptyState icon={<BookIcon />} title="Noch keine Sätze" text="Fotografiere die Vokabelseiten und lass sie auswerten, dann geht es hier los." action={<Button onClick={() => setTab('fotos')}>Zu den Fotos</Button>} /></Card>
+          ) : (
+            <>
+              {learn && learn.due > 0 && allLessons.some((l) => lessonProgress(lessons.awards, l.unitId, l.n).nextPart > 0) && (
+                <Card accent>
+                  <div className="row"><div className="grow">
+                    <div className="h3">{learn.due} Sätze zum Wiederholen</div>
+                    <div className="text-sm muted">Gemischt aus allen begonnenen Lektionen</div>
+                  </div><Button data-testid="learn" onClick={() => nav(`/t/${testId}/learn`)}>Wiederholen</Button></div>
+                </Card>
+              )}
+              {lessons.units.map((u) => {
+                const ls = allLessons.filter((l) => l.unitId === u.id);
+                if (!ls.length) return null;
+                return (
+                  <Card key={u.id} title={u.label}>
+                    <List>
+                      {ls.map((l) => {
+                        const p = lessonProgress(lessons.awards, u.id, l.n);
+                        return <ListItem key={l.n} testId={`lesson-${u.id}-${l.n}`} lead={p.crown ? <span style={{ color: 'var(--accent)' }}><CrownIcon /></span> : <span>{l.n}</span>} title={`Lektion ${l.n}`} sub={p.nextPart === 0 ? `${l.words.length} Sätze · noch nicht begonnen` : p.nextPart < PARTS.length ? `Runde ${p.nextPart + 1} von ${PARTS.length}` : `${p.total} von 15 Sternen`} trail={p.total > 0 ? <span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{p.total}</span> : undefined} onClick={() => nav(`/t/${testId}/lesson/${u.id}/${l.n}`)} />;
+                      })}
+                    </List>
+                  </Card>
+                );
+              })}
+            </>
+          )
+        )}
+        {tab === 'probetest' && (
+          <>
+            {test?.format ? (
+              <Card title="So sieht der echte Test aus">
+                <div className="stack-sm">
+                  {test.format.sections.map((s, i) => <div key={i} className="row-between text-sm"><span>{SECTION_LABEL[s.type]}{s.label ? ` · ${s.label}` : ''}</span><span className="muted">{s.items} Aufgaben · {s.points} P.</span></div>)}
+                  <div className="row-between text-sm"><strong>Gesamt</strong><strong>{test.format.totalPoints} Punkte{test.format.passMark ? ` · bestanden ab ${test.format.passMark}` : ''}</strong></div>
+                </div>
+              </Card>
+            ) : (
+              <Card flat><EmptyState icon={<TestIcon />} title="Kein Testformat" text="Fotografiere einen alten Test, dann baut die App den Probetest genauso auf." action={<Button onClick={() => setTab('fotos')}>Zu den Fotos</Button>} /></Card>
+            )}
+            <Card accent><div className="h3">Probetest</div><p className="text-sm muted" style={{ margin: 0 }}>Kommt als Nächstes (S4): ein Test im echten Format mit Punkten, Bereitschaft und Krone.</p></Card>
+          </>
+        )}
+      </main>
+      {tab && <TabBar tabs={TABS} active={tab} onSelect={setTab} />}
+    </>
   );
 }

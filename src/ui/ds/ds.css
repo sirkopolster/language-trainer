@@ -109,6 +109,8 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .appbar-title { font-weight: 800; font-size: var(--fs-lg); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .iconbtn { width: 40px; height: 40px; border-radius: var(--r-md); border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text); }
 .iconbtn:active { background: var(--primary-soft); }
+.iconbtn-on { color: var(--accent); }
+.input-sm { min-height: 40px; font-size: var(--fs-sm); }
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; background: var(--card); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
 .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--s-2) 0; font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
 .tab svg { width: 24px; height: 24px; }
@@ -119,4 +121,5 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .thumb { position: relative; aspect-ratio: 3 / 4; border-radius: var(--r-md); overflow: hidden; background: var(--primary-soft); }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .thumb-x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--overlay); color: #fff; font-size: var(--fs-md); cursor: pointer; }
+.thumb-state { position: absolute; left: 4px; bottom: 4px; }
 .thumb-busy { display: grid; place-items: center; color: var(--primary); font-size: var(--fs-sm); font-weight: 600; }

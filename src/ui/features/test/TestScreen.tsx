@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Photo, PhotoKind, Test } from '../../../domain/types';
-import { AppBar, BackIcon, Button, CameraIcon, Card, useToast } from '../../ds';
+import { AppBar, BackIcon, Badge, Button, CameraIcon, Card, useToast } from '../../ds';
 import { resizeToJpeg } from '../photos/resize';
+
+const SECTION_LABEL: Record<string, string> = { translate: 'Übersetzen', gap: 'Lückentext', choice: 'Auswahl', match: 'Zuordnen', other: 'Sonstige' };
 
 const SECTIONS: { kind: PhotoKind; title: string; hint: string }[] = [
   { kind: 'vocab', title: 'Vokabelseiten', hint: 'Alle Seiten mit den Vokabeln für diesen Test, eine Seite pro Foto.' },
@@ -19,8 +21,10 @@ export function TestScreen() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<{ kind: PhotoKind; n: number }>({ kind: 'vocab', n: 0 });
+  const [extracting, setExtracting] = useState<string | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
 
-  const load = () => repo.listPhotos(testId).then(setPhotos).catch((e: Error) => toast(e.message, 'bad'));
+  const load = () => Promise.all([repo.listPhotos(testId), repo.listWords(testId)]).then(([p, w]) => { setPhotos(p); setReviewCount(w.filter((x) => x.status === 'review').length); }).catch((e: Error) => toast(e.message, 'bad'));
   useEffect(() => { repo.getTest(testId).then(setTest).catch((e: Error) => toast(e.message, 'bad')); load(); }, [testId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     photos.filter((p) => !urls[p.id]).forEach((p) => repo.photoUrl(p).then((u) => setUrls((s) => ({ ...s, [p.id]: u }))).catch(() => undefined));
@@ -44,6 +48,22 @@ export function TestScreen() {
     if (ok) toast(ok === 1 ? '1 Foto hochgeladen' : `${ok} Fotos hochgeladen`, 'good');
   }
 
+  async function extract(kind: PhotoKind) {
+    const todo = photos.filter((p) => p.kind === kind && p.status !== 'extracted');
+    let words = 0;
+    for (const p of todo) {
+      setExtracting(p.id);
+      try {
+        const r = await repo.extractPhoto(p.id);
+        if (r.kind === 'vocab') words += r.words;
+        else { toast(`Testformat erkannt: ${r.sections} Aufgaben, ${r.totalPoints} Punkte`, 'good'); repo.getTest(testId).then(setTest); }
+      } catch (e) { toast((e as Error).message, 'bad'); }
+      await load();
+    }
+    setExtracting(null);
+    if (kind === 'vocab' && words > 0) nav(`/t/${testId}/review`);
+  }
+
   async function remove(p: Photo) {
     try { await repo.deletePhoto(p); setPhotos((ps) => ps.filter((x) => x.id !== p.id)); }
     catch (e) { toast((e as Error).message, 'bad'); }
@@ -57,20 +77,29 @@ export function TestScreen() {
       <AppBar title={test?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => (test ? nav(`/p/${test.profileId}`) : nav('/'))}><BackIcon /></button>} />
       <main className="page stack">
         {SECTIONS.map((s) => (
-          <PhotoSection key={s.kind} {...s} photos={photos.filter((p) => p.kind === s.kind)} urls={urls} busy={pending.kind === s.kind ? pending.n : 0} onFiles={(f) => upload(s.kind, f)} onRemove={remove} />
+          <PhotoSection key={s.kind} {...s} photos={photos.filter((p) => p.kind === s.kind)} urls={urls} busy={pending.kind === s.kind ? pending.n : 0} extracting={extracting} onFiles={(f) => upload(s.kind, f)} onRemove={remove} onExtract={() => extract(s.kind)} />
         ))}
+        {test?.format && (
+          <Card title="Testformat">
+            <div className="stack-sm">
+              {test.format.sections.map((s, i) => <div key={i} className="row-between text-sm"><span>{SECTION_LABEL[s.type]}{s.label ? ` · ${s.label}` : ''}</span><span className="muted">{s.items} Aufgaben · {s.points} P.</span></div>)}
+              <div className="row-between text-sm"><strong>Gesamt</strong><strong>{test.format.totalPoints} Punkte{test.format.passMark ? ` · bestanden ab ${test.format.passMark}` : ''}</strong></div>
+            </div>
+          </Card>
+        )}
         <Card accent>
           <div className="row"><CameraIcon /><div className="grow">
             <div className="h3">Nächster Schritt</div>
-            <div className="text-sm muted">{vocab === 0 ? 'Zuerst die Vokabelseiten fotografieren.' : sample === 0 ? 'Noch den Beispieltest fotografieren, dann auswerten.' : 'Auswerten kommt mit S2.'}</div>
-          </div></div>
+            <div className="text-sm muted">{reviewCount > 0 ? `${reviewCount} Wörter warten auf deine Prüfung.` : vocab === 0 ? 'Zuerst die Vokabelseiten fotografieren.' : photos.some((p) => p.status !== 'extracted') ? 'Fotos auswerten lassen.' : sample === 0 ? 'Noch den Beispieltest fotografieren.' : 'Lernen kommt mit S3.'}</div>
+          </div>{reviewCount > 0 && <Button small onClick={() => nav(`/t/${testId}/review`)}>Prüfen</Button>}</div>
         </Card>
       </main>
     </>
   );
 }
 
-function PhotoSection({ kind, title, hint, photos, urls, busy, onFiles, onRemove }: { kind: PhotoKind; title: string; hint: string; photos: Photo[]; urls: Record<string, string>; busy: number; onFiles: (f: FileList | null) => void; onRemove: (p: Photo) => void }) {
+function PhotoSection({ kind, title, hint, photos, urls, busy, extracting, onFiles, onRemove, onExtract }: { kind: PhotoKind; title: string; hint: string; photos: Photo[]; urls: Record<string, string>; busy: number; extracting: string | null; onFiles: (f: FileList | null) => void; onRemove: (p: Photo) => void; onExtract: () => void }) {
+  const open = photos.filter((p) => p.status !== 'extracted').length;
   const cam = useRef<HTMLInputElement>(null);
   const pick = useRef<HTMLInputElement>(null);
   return (
@@ -82,6 +111,7 @@ function PhotoSection({ kind, title, hint, photos, urls, busy, onFiles, onRemove
             {photos.map((p) => (
               <div key={p.id} className="thumb">
                 {urls[p.id] && <img src={urls[p.id]} alt="" />}
+                <span className="thumb-state">{extracting === p.id ? <Badge tone="primary">liest…</Badge> : p.status === 'extracted' ? <Badge tone="good">✓</Badge> : p.status === 'failed' ? <Badge tone="bad">Fehler</Badge> : null}</span>
                 <button className="thumb-x" data-testid="thumb-delete" aria-label="Foto löschen" onClick={() => onRemove(p)}>×</button>
               </div>
             ))}
@@ -89,9 +119,10 @@ function PhotoSection({ kind, title, hint, photos, urls, busy, onFiles, onRemove
           </div>
         )}
         <div className="row">
-          <Button block onClick={() => cam.current?.click()} disabled={busy > 0}><CameraIcon /> Foto</Button>
-          <Button block variant="secondary" onClick={() => pick.current?.click()} disabled={busy > 0}>Galerie</Button>
+          <Button block variant={open ? 'secondary' : 'primary'} onClick={() => cam.current?.click()} disabled={busy > 0 || !!extracting}><CameraIcon /> Foto</Button>
+          <Button block variant="secondary" onClick={() => pick.current?.click()} disabled={busy > 0 || !!extracting}>Galerie</Button>
         </div>
+        {open > 0 && <Button block data-testid={`extract-${kind}`} onClick={onExtract} disabled={busy > 0 || !!extracting}>{extracting ? 'Wird gelesen…' : open === 1 ? '1 Foto auswerten' : `${open} Fotos auswerten`}</Button>}
         <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
         <input ref={pick} type="file" accept="image/*" multiple hidden data-testid={`pick-${kind}`} onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
       </div>

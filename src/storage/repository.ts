@@ -1,4 +1,4 @@
-import type { Photo, PhotoKind, Profile, Test } from '../domain/types';
+import type { Photo, PhotoKind, Profile, Test, Unit, Word } from '../domain/types';
 
 /** Storage boundary. S0: profiles; S1: tests + photos; grows per slice. */
 export interface Repository {
@@ -16,6 +16,16 @@ export interface Repository {
   deletePhoto(photo: Photo): Promise<void>;
   /** short-lived URL for a thumbnail (bucket is private) */
   photoUrl(photo: Photo): Promise<string>;
+  /** Edge Function `extract`: one photo → words in review / test format */
+  extractPhoto(photoId: string): Promise<{ kind: 'vocab'; unit: string; words: number } | { kind: 'test'; sections: number; totalPoints: number }>;
+  listUnits(testId: string): Promise<Unit[]>;
+  listWords(testId: string): Promise<Word[]>;
+  updateWord(id: string, p: Partial<Pick<Word, 'source' | 'target' | 'example' | 'priority' | 'unitId'>>): Promise<void>;
+  deleteWord(id: string): Promise<void>;
+  /** review → active for every word of the test */
+  activateWords(testId: string): Promise<void>;
+  /** removes the files from the bucket, keeps the rows with status deleted (D-004 default) */
+  deletePhotoFiles(testId: string): Promise<void>;
   /** everything the user owns, for the JSON backup (blueprint §7) */
   exportAll(): Promise<Record<string, unknown[]>>;
 }

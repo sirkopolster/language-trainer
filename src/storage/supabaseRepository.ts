@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Photo, Profile, Test } from '../domain/types';
+import type { Photo, Profile, Test, Unit, Word } from '../domain/types';
 import type { Repository } from './repository';
 
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string, import.meta.env.VITE_SUPABASE_ANON_KEY as string);
@@ -7,11 +7,15 @@ export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string
 type ProfileRow = { id: string; name: string; settings: { keep_photos?: boolean }; created_at: string };
 type TestRow = { id: string; profile_id: string; name: string; lang_from: string; lang_to: string; test_date: string | null; format: Test['format']; status: Test['status']; created_at: string };
 
+type UnitRow = { id: string; test_id: string; label: string; sort: number };
+type WordRow = { id: string; unit_id: string; source: string; target: string; example: string | null; priority: boolean; status: Word['status'] };
 type PhotoRow = { id: string; test_id: string; kind: Photo['kind']; storage_path: string; status: Photo['status']; created_at: string };
 
 const toProfile = (r: ProfileRow): Profile => ({ id: r.id, name: r.name, settings: { keepPhotos: !!r.settings?.keep_photos }, createdAt: r.created_at });
 const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name: r.name, langFrom: r.lang_from, langTo: r.lang_to, testDate: r.test_date, format: r.format, status: r.status, createdAt: r.created_at });
 
+const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort });
+const toWord = (r: WordRow): Word => ({ id: r.id, unitId: r.unit_id, source: r.source, target: r.target, example: r.example, priority: r.priority, status: r.status });
 const toPhoto = (r: PhotoRow): Photo => ({ id: r.id, testId: r.test_id, kind: r.kind, storagePath: r.storage_path, status: r.status, createdAt: r.created_at });
 
 // crypto.randomUUID exists only in secure contexts (https/localhost); the phone test over http://192.168… needs the fallback
@@ -85,6 +89,54 @@ export const supabaseRepository: Repository = {
       return r.data!.signedUrl;
     }
     return data.signedUrl;
+  },
+  async extractPhoto(photoId) {
+    const { data, error } = await supabase.functions.invoke('extract', { body: { photoId } });
+    if (error) {
+      const body = await (error as { context?: Response }).context?.json?.().catch(() => null);
+      throw new Error(body?.error ?? 'Auswertung fehlgeschlagen');
+    }
+    if (data?.error) throw new Error(data.error);
+    return data;
+  },
+  async listUnits(testId) {
+    const { data, error } = await supabase.from('units').select('*').eq('test_id', testId).order('sort');
+    fail(error);
+    return (data as UnitRow[]).map(toUnit);
+  },
+  async listWords(testId) {
+    const { data, error } = await supabase.from('words').select('*, units!inner(test_id)').eq('units.test_id', testId).order('created_at');
+    fail(error);
+    return (data as WordRow[]).map(toWord);
+  },
+  async updateWord(id, p) {
+    const row: Record<string, unknown> = {};
+    if (p.source !== undefined) row.source = p.source;
+    if (p.target !== undefined) row.target = p.target;
+    if (p.example !== undefined) row.example = p.example;
+    if (p.priority !== undefined) row.priority = p.priority;
+    if (p.unitId !== undefined) row.unit_id = p.unitId;
+    const { error } = await supabase.from('words').update(row).eq('id', id);
+    fail(error);
+  },
+  async deleteWord(id) {
+    const { error } = await supabase.from('words').delete().eq('id', id);
+    fail(error);
+  },
+  async activateWords(testId) {
+    const { data: units, error: ue } = await supabase.from('units').select('id').eq('test_id', testId);
+    fail(ue);
+    const { error } = await supabase.from('words').update({ status: 'active' }).eq('status', 'review').in('unit_id', (units ?? []).map((u) => u.id));
+    fail(error);
+  },
+  async deletePhotoFiles(testId) {
+    const { data, error } = await supabase.from('photos').select('id, storage_path').eq('test_id', testId).neq('status', 'deleted');
+    fail(error);
+    if (!data?.length) return;
+    const rm = await supabase.storage.from('photos').remove(data.map((p) => p.storage_path));
+    fail(rm.error);
+    const up = await supabase.from('photos').update({ status: 'deleted' }).in('id', data.map((p) => p.id));
+    fail(up.error);
   },
   async exportAll() {
     const out: Record<string, unknown[]> = {};

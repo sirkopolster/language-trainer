@@ -14,6 +14,9 @@ const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name:
 
 const toPhoto = (r: PhotoRow): Photo => ({ id: r.id, testId: r.test_id, kind: r.kind, storagePath: r.storage_path, status: r.status, createdAt: r.created_at });
 
+// crypto.randomUUID exists only in secure contexts (https/localhost); the phone test over http://192.168… needs the fallback
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : [...crypto.getRandomValues(new Uint8Array(16))].map((b, i) => ((i === 6 ? (b & 0x0f) | 0x40 : i === 8 ? (b & 0x3f) | 0x80 : b).toString(16).padStart(2, '0')) + ([3, 5, 7, 9].includes(i) ? '-' : '')).join(''));
+
 const fail = (e: { message: string } | null) => { if (e) throw new Error(e.message); };
 
 export const supabaseRepository: Repository = {
@@ -55,7 +58,7 @@ export const supabaseRepository: Repository = {
   async addPhoto(test, kind, jpeg) {
     const { data: u } = await supabase.auth.getUser();
     // path = <user_id>/<profile_id>/<test_id>/<uuid>.jpg — the storage policy checks the first folder against auth.uid()
-    const path = `${u.user?.id}/${test.profileId}/${test.id}/${crypto.randomUUID()}.jpg`;
+    const path = `${u.user?.id}/${test.profileId}/${test.id}/${uuid()}.jpg`;
     const up = await supabase.storage.from('photos').upload(path, jpeg, { contentType: 'image/jpeg' });
     fail(up.error);
     const { data, error } = await supabase.from('photos').insert({ test_id: test.id, kind, storage_path: path }).select().single();

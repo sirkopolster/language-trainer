@@ -5,12 +5,22 @@ import { Button } from '../../ds';
 
 /** One exercise = prompt + answer input. Calls onAnswer with the learner's sentence (or option). Locked after answering. */
 export function ExerciseView({ ex, locked, reveal, onAnswer }: { ex: Exercise; locked: boolean; reveal?: boolean; onAnswer: (typed: string) => void }) {
+  const [memorised, setMemorised] = useState(false);
+  if (reveal && !memorised) return (
+    <div className="stack">
+      <div className="card card-flat">
+        <div className="text-sm muted">Neuer Satz, merk ihn dir:</div>
+        <div className="h2" data-testid="prompt">{ex.prompt}</div>
+        <div className="h3" style={{ color: 'var(--primary)', marginTop: 'var(--s-2)' }}>{ex.answer}</div>
+      </div>
+      <Button block data-testid="memorised" onClick={() => setMemorised(true)}>Gemerkt</Button>
+    </div>
+  );
   return (
     <div className="stack">
       <div className="card card-flat">
         <div className="text-sm muted">Auf Englisch:</div>
         <div className="h2" data-testid="prompt">{ex.prompt}</div>
-        {reveal && <div className="text-md" style={{ color: 'var(--primary)', marginTop: 'var(--s-2)' }}>{ex.answer}</div>}
       </div>
       {ex.type === 'choice' && <ChoiceView ex={ex} locked={locked} onAnswer={onAnswer} />}
       {ex.type === 'tiles' && <TilesView ex={ex} locked={locked} onAnswer={onAnswer} />}

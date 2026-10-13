@@ -66,6 +66,8 @@ try {
     await t('learn').click();
     for (let i = 0; i < 3; i++) {
       await t('prompt').waitFor();
+    if (await t('memorised').count()) await t('memorised').click();
+      if (await t('memorised').count()) await t('memorised').click();
       const prompt = await t('prompt').innerText();
       const ans = SENTENCES.find(([de]) => de === prompt)[1];
       if (await t('option').count()) { await page.getByTestId('option').filter({ hasText: ans }).first().click(); await page.getByText('Richtig!').waitFor(); }

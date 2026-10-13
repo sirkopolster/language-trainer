@@ -20,6 +20,7 @@ try {
   const seen = new Set();
   for (let i = 0; i < 8; i++) {
     await t('prompt').waitFor();
+    if (await t('memorised').count()) await t('memorised').click();
     const prompt = await t('prompt').innerText();
     const answer = SENTENCES.find(([de]) => de === prompt)[1];
     const type = (await t('option').count()) ? 'choice' : (await t('tile').count()) ? 'tiles' : (await t('gap').count()) ? 'gaps' : 'write';

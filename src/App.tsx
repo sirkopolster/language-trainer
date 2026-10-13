@@ -7,9 +7,13 @@ import { ErrorBoundary, RouteError } from './ui/ErrorScreen';
 import { Styleguide } from './ui/Styleguide';
 import { Login } from './ui/features/auth/Login';
 import { Home } from './ui/features/home/Home';
+import { ProfileScreen } from './ui/features/profile/ProfileScreen';
+import { TestScreen } from './ui/features/test/TestScreen';
 
 const router = createBrowserRouter([
   { path: '/', element: <Home />, errorElement: <RouteError /> },
+  { path: '/p/:profileId', element: <ProfileScreen />, errorElement: <RouteError /> },
+  { path: '/t/:testId', element: <TestScreen />, errorElement: <RouteError /> },
   { path: '/styleguide', element: <Styleguide /> },
   { path: '*', element: <Navigate to="/" replace /> },
 ]);

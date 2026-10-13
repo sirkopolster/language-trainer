@@ -1,0 +1,100 @@
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
+import type { Photo, PhotoKind, Test } from '../../../domain/types';
+import { AppBar, BackIcon, Button, CameraIcon, Card, useToast } from '../../ds';
+import { resizeToJpeg } from '../photos/resize';
+
+const SECTIONS: { kind: PhotoKind; title: string; hint: string }[] = [
+  { kind: 'vocab', title: 'Vokabelseiten', hint: 'Alle Seiten mit den Vokabeln für diesen Test, eine Seite pro Foto.' },
+  { kind: 'test', title: 'Beispieltest', hint: 'Ein alter Test oder eine Übungsseite, damit die Übungen so aussehen wie der echte Test.' },
+];
+
+/** S1: photos per test. Capture or pick, resize in the browser, upload to the private bucket, thumbnails via signed URL. */
+export function TestScreen() {
+  const { testId = '' } = useParams();
+  const nav = useNavigate();
+  const toast = useToast();
+  const [test, setTest] = useState<Test | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState<{ kind: PhotoKind; n: number }>({ kind: 'vocab', n: 0 });
+
+  const load = () => repo.listPhotos(testId).then(setPhotos).catch((e: Error) => toast(e.message, 'bad'));
+  useEffect(() => { repo.getTest(testId).then(setTest).catch((e: Error) => toast(e.message, 'bad')); load(); }, [testId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    photos.filter((p) => !urls[p.id]).forEach((p) => repo.photoUrl(p).then((u) => setUrls((s) => ({ ...s, [p.id]: u }))).catch(() => undefined));
+  }, [photos]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function upload(kind: PhotoKind, files: FileList | null) {
+    const list = Array.from(files ?? []); // copy before any await: the input is reset right after onChange
+    if (!list.length) return;
+    setPending({ kind, n: list.length });
+    const target = test ?? (await repo.getTest(testId)); // the user can be faster than the first fetch
+    let ok = 0;
+    for (const f of list) {
+      try {
+        const jpeg = await resizeToJpeg(f);
+        await repo.addPhoto(target, kind, jpeg);
+        ok++;
+      } catch (e) { toast((e as Error).message, 'bad'); }
+      setPending((p) => ({ ...p, n: p.n - 1 }));
+      load();
+    }
+    if (ok) toast(ok === 1 ? '1 Foto hochgeladen' : `${ok} Fotos hochgeladen`, 'good');
+  }
+
+  async function remove(p: Photo) {
+    try { await repo.deletePhoto(p); setPhotos((ps) => ps.filter((x) => x.id !== p.id)); }
+    catch (e) { toast((e as Error).message, 'bad'); }
+  }
+
+  const vocab = photos.filter((p) => p.kind === 'vocab').length;
+  const sample = photos.filter((p) => p.kind === 'test').length;
+
+  return (
+    <>
+      <AppBar title={test?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => (test ? nav(`/p/${test.profileId}`) : nav('/'))}><BackIcon /></button>} />
+      <main className="page stack">
+        {SECTIONS.map((s) => (
+          <PhotoSection key={s.kind} {...s} photos={photos.filter((p) => p.kind === s.kind)} urls={urls} busy={pending.kind === s.kind ? pending.n : 0} onFiles={(f) => upload(s.kind, f)} onRemove={remove} />
+        ))}
+        <Card accent>
+          <div className="row"><CameraIcon /><div className="grow">
+            <div className="h3">Nächster Schritt</div>
+            <div className="text-sm muted">{vocab === 0 ? 'Zuerst die Vokabelseiten fotografieren.' : sample === 0 ? 'Noch den Beispieltest fotografieren, dann auswerten.' : 'Auswerten kommt mit S2.'}</div>
+          </div></div>
+        </Card>
+      </main>
+    </>
+  );
+}
+
+function PhotoSection({ kind, title, hint, photos, urls, busy, onFiles, onRemove }: { kind: PhotoKind; title: string; hint: string; photos: Photo[]; urls: Record<string, string>; busy: number; onFiles: (f: FileList | null) => void; onRemove: (p: Photo) => void }) {
+  const cam = useRef<HTMLInputElement>(null);
+  const pick = useRef<HTMLInputElement>(null);
+  return (
+    <Card title={`${title}${photos.length ? ` (${photos.length})` : ''}`}>
+      <div className="stack-sm">
+        {photos.length === 0 && busy === 0 && <p className="text-sm muted">{hint}</p>}
+        {(photos.length > 0 || busy > 0) && (
+          <div className="thumbs" data-testid={`thumbs-${kind}`}>
+            {photos.map((p) => (
+              <div key={p.id} className="thumb">
+                {urls[p.id] && <img src={urls[p.id]} alt="" />}
+                <button className="thumb-x" data-testid="thumb-delete" aria-label="Foto löschen" onClick={() => onRemove(p)}>×</button>
+              </div>
+            ))}
+            {Array.from({ length: busy }, (_, i) => <div key={`b${i}`} className="thumb thumb-busy">lädt…</div>)}
+          </div>
+        )}
+        <div className="row">
+          <Button block onClick={() => cam.current?.click()} disabled={busy > 0}><CameraIcon /> Foto</Button>
+          <Button block variant="secondary" onClick={() => pick.current?.click()} disabled={busy > 0}>Galerie</Button>
+        </div>
+        <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
+        <input ref={pick} type="file" accept="image/*" multiple hidden data-testid={`pick-${kind}`} onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
+      </div>
+    </Card>
+  );
+}

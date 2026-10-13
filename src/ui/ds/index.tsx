@@ -44,7 +44,7 @@ export function Card({ title, accent, flat, children, className }: { title?: str
 export function List({ children }: { children: ReactNode }) {
   return <div className="list">{children}</div>;
 }
-export function ListItem({ lead, title, sub, trail, onClick }: { lead?: ReactNode; title: ReactNode; sub?: ReactNode; trail?: ReactNode; onClick?: () => void }) {
+export function ListItem({ lead, title, sub, trail, onClick, testId }: { lead?: ReactNode; title: ReactNode; sub?: ReactNode; trail?: ReactNode; onClick?: () => void; testId?: string }) {
   const body = (
     <>
       {lead !== undefined && <span className="item-lead">{lead}</span>}
@@ -55,7 +55,7 @@ export function ListItem({ lead, title, sub, trail, onClick }: { lead?: ReactNod
       {(trail || onClick) && <span className="item-trail">{trail}{onClick && <Chevron />}</span>}
     </>
   );
-  return onClick ? <button type="button" className="item item-tap" onClick={onClick}>{body}</button> : <div className="item">{body}</div>;
+  return onClick ? <button type="button" className="item item-tap" data-testid={testId} onClick={onClick}>{body}</button> : <div className="item">{body}</div>;
 }
 
 /* ---------- ProgressBar ---------- */

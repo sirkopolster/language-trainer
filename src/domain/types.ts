@@ -9,6 +9,10 @@ export type SectionType = 'translate' | 'gap' | 'choice' | 'match' | 'other';
 export interface TestSection { type: SectionType; direction: string; items: number; points: number; label?: string }
 export interface TestFormat { sections: TestSection[]; totalPoints: number; passMark: number | null }
 
+export type PhotoKind = 'vocab' | 'test';
+export type PhotoStatus = 'uploaded' | 'extracted' | 'failed' | 'deleted';
+export interface Photo { id: string; testId: string; kind: PhotoKind; storagePath: string; status: PhotoStatus; createdAt: string }
+
 export interface Unit { id: string; testId: string; label: string; sort: number }
 
 export type WordStatus = 'review' | 'active' | 'retired';

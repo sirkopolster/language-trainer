@@ -28,11 +28,11 @@ export function Login() {
       </div>
       <Card>
         <form className="stack" onSubmit={submit}>
-          <Input label="E-Mail (Eltern)" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input label="Passwort" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} error={error ?? undefined} hint={mode === 'signup' ? 'Mindestens 8 Zeichen.' : undefined} />
+          <Input data-testid="login-email" label="E-Mail (Eltern)" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input data-testid="login-password" label="Passwort" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} error={error ?? undefined} hint={mode === 'signup' ? 'Mindestens 8 Zeichen.' : undefined} />
           {info && <p className="text-sm" style={{ color: 'var(--good)' }}>{info}</p>}
-          <Button type="submit" block disabled={busy}>{mode === 'login' ? 'Anmelden' : 'Konto anlegen'}</Button>
-          <Button variant="ghost" block onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setInfo(null); }}>
+          <Button data-testid="login-submit" type="submit" block disabled={busy}>{mode === 'login' ? 'Anmelden' : 'Konto anlegen'}</Button>
+          <Button data-testid="login-toggle" variant="ghost" block onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setInfo(null); }}>
             {mode === 'login' ? 'Neu hier? Konto anlegen' : 'Schon ein Konto? Anmelden'}
           </Button>
         </form>

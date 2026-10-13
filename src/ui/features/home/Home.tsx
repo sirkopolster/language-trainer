@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase, supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Profile } from '../../../domain/types';
-import { AppBar, Button, CameraIcon, Card, EmptyState, Input, List, ListItem, Modal, UserIcon, useToast } from '../../ds';
+import { AppBar, Button, Card, EmptyState, Input, List, ListItem, Modal, UserIcon, useToast } from '../../ds';
 
-/** S0 home: profiles list, add profile, JSON backup, logout. Learning content arrives with S1+. */
+/** Home: profiles list, add profile, JSON backup, logout. Tap a profile for its tests (S1). */
 export function Home() {
   const toast = useToast();
+  const nav = useNavigate();
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -33,23 +35,20 @@ export function Home() {
       <main className="page stack">
         {profiles === null ? <p className="muted text-sm">Lädt…</p> : profiles.length === 0 ? (
           <Card flat>
-            <EmptyState icon={<UserIcon />} title="Wer lernt hier?" text="Lege ein Profil für dein Kind an. Nur der Vorname, mehr braucht es nicht." action={<Button onClick={() => setAdding(true)}>Profil anlegen</Button>} />
+            <EmptyState icon={<UserIcon />} title="Wer lernt hier?" text="Lege ein Profil für dein Kind an. Nur der Vorname, mehr braucht es nicht." action={<Button data-testid="profile-add" onClick={() => setAdding(true)}>Profil anlegen</Button>} />
           </Card>
         ) : (
           <>
             <List>
-              {profiles.map((p) => <ListItem key={p.id} lead={p.name.slice(0, 1).toUpperCase()} title={p.name} sub="Noch kein Test angelegt" onClick={() => toast('Kommt mit S1: Fotos aufnehmen')} />)}
+              {profiles.map((p) => <ListItem key={p.id} testId={`profile-${p.id}`} lead={p.name.slice(0, 1).toUpperCase()} title={p.name} sub="Tests und Fotos" onClick={() => nav(`/p/${p.id}`)} />)}
             </List>
-            <Button variant="secondary" block onClick={() => setAdding(true)}>Weiteres Profil</Button>
-            <Card accent>
-              <div className="row"><CameraIcon /><div className="grow"><div className="h3">Nächster Schritt</div><div className="text-sm muted">Vokabelseiten fotografieren (S1)</div></div></div>
-            </Card>
+            <Button variant="secondary" block data-testid="profile-add" onClick={() => setAdding(true)}>Weiteres Profil</Button>
           </>
         )}
         <Button variant="ghost" block onClick={backup}>Backup (JSON) herunterladen</Button>
       </main>
-      <Modal open={adding} title="Neues Profil" onClose={() => setAdding(false)} actions={<><Button onClick={add} disabled={!name.trim()}>Anlegen</Button><Button variant="ghost" onClick={() => setAdding(false)}>Abbrechen</Button></>}>
-        <Input label="Vorname" placeholder="z. B. Mila" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      <Modal open={adding} title="Neues Profil" onClose={() => setAdding(false)} actions={<><Button data-testid="profile-save" onClick={add} disabled={!name.trim()}>Anlegen</Button><Button variant="ghost" onClick={() => setAdding(false)}>Abbrechen</Button></>}>
+        <Input data-testid="profile-name" label="Vorname" placeholder="z. B. Mila" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
       </Modal>
     </>
   );

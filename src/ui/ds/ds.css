@@ -113,3 +113,10 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--s-2) 0; font-size: var(--fs-xs); font-weight: 600; color: var(--muted); }
 .tab svg { width: 24px; height: 24px; }
 .tab-active { color: var(--primary); }
+
+/* ---------- Photo grid (S1) ---------- */
+.thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.thumb { position: relative; aspect-ratio: 3 / 4; border-radius: var(--r-md); overflow: hidden; background: var(--primary-soft); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--overlay); color: #fff; font-size: var(--fs-md); cursor: pointer; }
+.thumb-busy { display: grid; place-items: center; color: var(--primary); font-size: var(--fs-sm); font-weight: 600; }

@@ -68,7 +68,7 @@ async function callModel(prompt: string, schema: unknown, jpegB64: string): Prom
     if (!res.ok) throw new Error(`Anthropic ${res.status}: ${body.error?.message ?? ''}`);
     return JSON.parse(body.content.find((c: { type: string }) => c.type === 'text').text);
   }
-  const model = Deno.env.get('AI_MODEL') ?? 'gemini-2.5-flash-lite';
+  const model = Deno.env.get('AI_MODEL') ?? 'gemini-3.5-flash-lite';
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'x-goog-api-key': Deno.env.get('GEMINI_API_KEY')!, 'content-type': 'application/json' },

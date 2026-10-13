@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
     const file = await sb.storage.from('photos').download(photo.storage_path);
     if (file.error) return json({ error: 'Foto konnte nicht geladen werden' }, 500);
-    const b64 = btoa(String.fromCharCode(...new Uint8Array(await file.data.arrayBuffer())));
+    const b64 = toBase64(new Uint8Array(await file.data.arrayBuffer()));
 
     const vocab = photo.kind === 'vocab';
     const raw = await callModel(vocab ? vocabPrompt(test.lang_from, test.lang_to) : formatPrompt(), vocab ? VOCAB_SCHEMA : FORMAT_SCHEMA, b64);
@@ -50,6 +50,13 @@ Deno.serve(async (req) => {
     return json({ error: (e as Error).message ?? 'Auswertung fehlgeschlagen' }, 500);
   }
 });
+
+// chunked: spreading a 300 KB photo into String.fromCharCode(...bytes) overflows the call stack
+function toBase64(bytes: Uint8Array): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000) as unknown as number[]);
+  return btoa(bin);
+}
 
 async function callModel(prompt: string, schema: unknown, jpegB64: string): Promise<unknown> {
   const provider = Deno.env.get('AI_PROVIDER') ?? (Deno.env.get('ANTHROPIC_API_KEY') ? 'anthropic' : 'gemini');

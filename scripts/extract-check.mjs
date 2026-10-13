@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import { env } from './env.mjs';
 import { qaCleanup } from './qa-cleanup.mjs';
 
-const html = `<body style="font-family:Georgia;padding:40px;width:700px"><h2>Unit 4 · At the zoo</h2><table style="font-size:22px;border-collapse:collapse">
+const html = `<body style="font-family:Georgia;padding:60px;width:1400px;font-size:32px"><h2>Unit 4 · At the zoo</h2><table style="font-size:22px;border-collapse:collapse">
 <tr><td style="padding:6px 24px 6px 0"><b>the elephant</b></td><td>der Elefant</td><td style="color:#555;font-style:italic">The elephant is big.</td></tr>
 <tr><td style="padding:6px 24px 6px 0">the monkey</td><td>der Affe</td><td></td></tr>
 <tr><td style="padding:6px 24px 6px 0"><b>to feed</b></td><td>füttern</td><td style="color:#555;font-style:italic">Don't feed the animals.</td></tr>
@@ -15,7 +15,7 @@ const html = `<body style="font-family:Georgia;padding:40px;width:700px"><h2>Uni
 </table></body>`;
 
 async function fakePage() {
-  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 800, height: 500 } });
+  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1600, height: 2000 }, deviceScaleFactor: 1 });
   await p.setContent(html); const buf = await p.screenshot({ type: 'jpeg', quality: 85 }); await b.close(); return buf;
 }
 

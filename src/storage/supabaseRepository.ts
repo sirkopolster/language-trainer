@@ -159,6 +159,12 @@ export const supabaseRepository: Repository = {
     const { error } = data ? await supabase.from('awards').update(row).eq('id', data.id) : await supabase.from('awards').insert(row);
     fail(error);
   },
+  async resetLesson(profileId, unitId, n, wordIds) {
+    const a = await supabase.from('awards').delete().eq('profile_id', profileId).eq('ref_id', unitId).like('ref', `lesson:${n}%`);
+    fail(a.error);
+    const s = await supabase.from('word_state').delete().in('word_id', wordIds);
+    fail(s.error);
+  },
   async saveWordState(s) {
     const { error } = await supabase.from('word_state').upsert({ word_id: s.wordId, box: s.box, due_at: s.dueAt, streak: s.streak, lapses: s.lapses, last_result: s.lastResult, updated_at: new Date().toISOString() });
     fail(error);

@@ -30,6 +30,8 @@ export interface Repository {
   listAwards(profileId: string): Promise<Award[]>;
   /** upsert on (profile, kind, unit, ref); keeps the better value */
   saveAward(a: Award): Promise<void>;
+  /** lesson reset: removes its stars/crown and the ladder state of its sentences */
+  resetLesson(profileId: string, unitId: string, n: number, wordIds: string[]): Promise<void>;
   saveWordState(s: WordState): Promise<void>;
   addSession(s: { profileId: string; kind: 'study' | 'mock'; unitId: string | null; startedAt: string; items: unknown[]; score?: number; maxScore?: number }): Promise<void>;
   /** everything the user owns, for the JSON backup (blueprint §7) */

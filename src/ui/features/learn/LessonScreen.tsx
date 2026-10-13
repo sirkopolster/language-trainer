@@ -6,7 +6,7 @@ import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, newState, requeueIndex, shuffle } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Exercise } from '../../../domain/exercises';
 import { PARTS, lessonProgress, lessonRef, partRef, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
-import { AppBar, BackIcon, Button, Card, CrownIcon, ProgressBar, StarIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, Button, Card, CrownIcon, Modal, ProgressBar, StarIcon, useToast } from '../../ds';
 import { ExerciseView } from './Exercises';
 
 const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'warn' | 'bad' }> = {
@@ -31,6 +31,7 @@ export function LessonScreen() {
   const [states, setStates] = useState<Map<string, WordState>>(new Map());
   const [phase, setPhase] = useState<Phase>({ kind: 'plan' });
   const [log, setLog] = useState<unknown[]>([]);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     repo.getTest(testId).then(async (t) => {
@@ -89,6 +90,17 @@ export function LessonScreen() {
     save().catch((e: Error) => toast(e.message, 'bad'));
   }
 
+  async function reset() {
+    if (!test || !lesson) return;
+    try {
+      await repo.resetLesson(test.profileId, unitId, n, lesson.words.map((w) => w.id));
+      setAwards((a) => a.filter((x) => !(x.refId === unitId && x.ref.startsWith(`lesson:${n}`))));
+      setStates((m) => { const c = new Map(m); lesson.words.forEach((w) => c.delete(w.id)); return c; });
+      toast('Lektion zurückgesetzt', 'good');
+    } catch (e) { toast((e as Error).message, 'bad'); }
+    setConfirmReset(false);
+  }
+
   const back = <button className="iconbtn" aria-label="Zurück" onClick={() => nav(`/t/${testId}`)}><BackIcon /></button>;
   if (!lesson) return <><AppBar title="Lektion" left={back} /><main className="page"><p className="muted text-sm">Lädt…</p></main></>;
   const title = `Lektion ${n}`;
@@ -108,7 +120,11 @@ export function LessonScreen() {
         {progress.nextPart < PARTS.length
           ? <Button block data-testid="lesson-start" onClick={() => startPart(progress.nextPart)}>{progress.nextPart === 0 ? 'Los geht’s' : `Weiter mit Runde ${progress.nextPart + 1}`}</Button>
           : <Button block data-testid="lesson-start" variant="secondary" onClick={() => startPart(PARTS.length - 1)}>Schreiben nochmal üben</Button>}
+        {progress.nextPart > 0 && <Button block variant="ghost" data-testid="lesson-reset" onClick={() => setConfirmReset(true)}>Lektion von vorn beginnen</Button>}
       </main>
+      <Modal open={confirmReset} title="Von vorn beginnen?" onClose={() => setConfirmReset(false)} actions={<><Button variant="danger" data-testid="lesson-reset-yes" onClick={reset}>Ja, zurücksetzen</Button><Button variant="ghost" onClick={() => setConfirmReset(false)}>Abbrechen</Button></>}>
+        <p className="text-sm muted">Sterne und Krone dieser Lektion werden gelöscht, die fünf Sätze starten wieder bei Runde 1.</p>
+      </Modal>
     </>
   );
 

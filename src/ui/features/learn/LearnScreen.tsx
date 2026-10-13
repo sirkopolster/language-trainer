@@ -100,7 +100,7 @@ export function LearnScreen() {
       <AppBar title={step?.retry ? 'Nochmal tippen' : 'Lernen'} right={<Button small variant="ghost" onClick={() => nav(`/t/${testId}`)}>Abbrechen</Button>} />
       <main className="page stack">
         <ProgressBar value={done.total} max={total} thin />
-        {step && <ExerciseView key={`${step.item.word.id}-${step.retry}-${done.total}`} ex={step.ex} locked={!!feedback} reveal={step.item.state.box === 0 && !step.retry && step.ex.type === 'choice' && !feedback} onAnswer={answer} />}
+        {step && <ExerciseView key={`${step.item.word.id}-${step.retry}-${done.total}`} ex={step.ex} locked={!!feedback} hint={step.item.state.box === 0 && !step.retry && step.ex.type === 'choice'} onAnswer={answer} />}
         {feedback && fb && (
           <Card className={`feedback feedback-${fb.tone}`}>
             <div className="h3" data-testid="feedback">{fb.title}</div>

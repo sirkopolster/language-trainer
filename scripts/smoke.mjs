@@ -1,4 +1,4 @@
-// Smoke test: sign-up/login → profile → test from home → upload 2 photos → delete 1 → home lists it → backup → seeded learn session (choice + write, wrong then right). Usage: node scripts/smoke.mjs [baseUrl]
+// Smoke test: sign-up/login → profile → test from home → upload 2 photos → delete 1 → home lists it → backup → seeded lesson (plan, round 1 Wählen with a hint → 2 stars, round 2 is Bauen). Usage: node scripts/smoke.mjs [baseUrl]
 // Rules (blueprint §7): data-testid selectors, waitFor not sleeps, one step per feature, cleanup in finally.
 import { chromium } from 'playwright';
 import { env } from './env.mjs';
@@ -59,26 +59,27 @@ try {
     const name = (await dl).suggestedFilename();
     if (!name.startsWith('snaplearn-backup-')) throw new Error('unexpected file ' + name);
   });
-  await step('learn: choice right, write wrong then retype', async () => {
+  await step('lesson: plan, round 1 with one hint, stars', async () => {
     await qaCleanup();
-    const seed = await qaSeed({ levels: [0, 4] });
+    const seed = await qaSeed();
     await page.goto(`${base}/t/${seed.testId}`);
-    await t('learn').click();
-    for (let i = 0; i < 3; i++) {
+    await t(`lesson-${seed.unitId}-1`).click();
+    await t('lesson-start').click();
+    for (let i = 0; i < 8; i++) {
+      if (await t('part-next').isVisible().catch(() => false)) break;
       await t('prompt').waitFor();
-    if (await t('memorised').count()) await t('memorised').click();
-      if (await t('memorised').count()) await t('memorised').click();
       const prompt = await t('prompt').innerText();
-      const ans = SENTENCES.find(([de]) => de === prompt)[1];
-      if (await t('option').count()) { await page.getByTestId('option').filter({ hasText: ans }).first().click(); await page.getByText('Richtig!').waitFor(); }
-      else if (await t('write').count()) {
-        const retry = (await page.locator('.appbar-title').innerText()).includes('Nochmal');
-        await t('write').fill(retry ? ans : 'completely wrong'); await t('submit').click();
-        await (retry ? page.getByText('Richtig!') : page.getByText('Noch nicht')).waitFor();
-      } else if (await t('tile').count()) { for (const w of ans.split(' ')) await page.getByTestId('tile').filter({ hasText: w }).first().click(); await t('submit').click(); await t('feedback').waitFor(); }
-      else { const gaps = await t('gap').all(); for (const g of gaps) await g.fill('x'); await t('submit').click(); await t('feedback').waitFor(); }
+      const answer = SENTENCES.find(([de]) => de === prompt)[1];
+      if (i === 0) await t('hint').click();
+      await page.getByTestId('option').filter({ hasText: answer }).first().click();
+      await page.getByText('Richtig!').waitFor();
       await t('next').click();
     }
+    await t('part-next').waitFor();
+    await page.getByLabel('2 Sterne').waitFor(); // one hint = one mistake = 2 stars
+    await t('part-next').click();
+    await t('prompt').waitFor();
+    if (!(await t('tile').count())) throw new Error('round 2 should be tiles');
   });
   if (errors.length) throw new Error('console errors: ' + errors.join(' | '));
   console.log(steps.join('\n'), '\nSMOKE OK', base);

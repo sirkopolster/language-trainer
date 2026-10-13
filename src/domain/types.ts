@@ -21,4 +21,5 @@ export interface Word { id: string; unitId: string; source: string; target: stri
 export interface WordState { wordId: string; box: number; dueAt: string; streak: number; lapses: number; lastResult: boolean | null }
 
 export interface Streak { profileId: string; current: number; longest: number; lastDay: string | null }
-export interface Award { id: string; profileId: string; kind: 'star' | 'crown'; refId: string | null; awardedAt: string }
+/** refId = unit, ref = 'lesson:<n>:<part>' (star, value 0–3) or 'lesson:<n>' (crown) */
+export interface Award { id: string; profileId: string; kind: 'star' | 'crown'; refId: string | null; ref: string; value: number; awardedAt: string }

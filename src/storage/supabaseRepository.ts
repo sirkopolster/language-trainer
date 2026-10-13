@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Photo, Profile, Test, Unit, Word, WordState } from '../domain/types';
+import type { Award, Photo, Profile, Test, Unit, Word, WordState } from '../domain/types';
 import type { Repository } from './repository';
 
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string, import.meta.env.VITE_SUPABASE_ANON_KEY as string);
@@ -10,6 +10,7 @@ type TestRow = { id: string; profile_id: string; name: string; lang_from: string
 type UnitRow = { id: string; test_id: string; label: string; sort: number };
 type WordRow = { id: string; unit_id: string; source: string; target: string; example: string | null; priority: boolean; status: Word['status'] };
 type StateRow = { word_id: string; box: number; due_at: string; streak: number; lapses: number; last_result: boolean | null };
+type AwardRow = { id: string; profile_id: string; kind: Award['kind']; ref_id: string | null; ref: string; value: number; awarded_at: string };
 type PhotoRow = { id: string; test_id: string; kind: Photo['kind']; storage_path: string; status: Photo['status']; created_at: string };
 
 const toProfile = (r: ProfileRow): Profile => ({ id: r.id, name: r.name, settings: { keepPhotos: !!r.settings?.keep_photos }, createdAt: r.created_at });
@@ -18,6 +19,7 @@ const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name:
 const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort });
 const toWord = (r: WordRow): Word => ({ id: r.id, unitId: r.unit_id, source: r.source, target: r.target, example: r.example, priority: r.priority, status: r.status });
 const toState = (r: StateRow): WordState => ({ wordId: r.word_id, box: r.box, dueAt: r.due_at, streak: r.streak, lapses: r.lapses, lastResult: r.last_result });
+const toAward = (r: AwardRow): Award => ({ id: r.id, profileId: r.profile_id, kind: r.kind, refId: r.ref_id, ref: r.ref, value: r.value, awardedAt: r.awarded_at });
 const toPhoto = (r: PhotoRow): Photo => ({ id: r.id, testId: r.test_id, kind: r.kind, storagePath: r.storage_path, status: r.status, createdAt: r.created_at });
 
 // crypto.randomUUID exists only in secure contexts (https/localhost); the phone test over http://192.168… needs the fallback
@@ -144,6 +146,18 @@ export const supabaseRepository: Repository = {
     const { data, error } = await supabase.from('word_state').select('*, words!inner(unit_id, units!inner(test_id))').eq('words.units.test_id', testId);
     fail(error);
     return (data as StateRow[]).map(toState);
+  },
+  async listAwards(profileId) {
+    const { data, error } = await supabase.from('awards').select('*').eq('profile_id', profileId);
+    fail(error);
+    return (data as AwardRow[]).map(toAward);
+  },
+  async saveAward(a) {
+    const { data } = await supabase.from('awards').select('id, value').eq('profile_id', a.profileId).eq('kind', a.kind).eq('ref_id', a.refId).eq('ref', a.ref).maybeSingle();
+    if (data && data.value >= a.value) return;
+    const row = { profile_id: a.profileId, kind: a.kind, ref_id: a.refId, ref: a.ref, value: a.value, awarded_at: a.awardedAt };
+    const { error } = data ? await supabase.from('awards').update(row).eq('id', data.id) : await supabase.from('awards').insert(row);
+    fail(error);
   },
   async saveWordState(s) {
     const { error } = await supabase.from('word_state').upsert({ word_id: s.wordId, box: s.box, due_at: s.dueAt, streak: s.streak, lapses: s.lapses, last_result: s.lastResult, updated_at: new Date().toISOString() });

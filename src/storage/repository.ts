@@ -1,4 +1,4 @@
-import type { Photo, PhotoKind, Profile, Test, Unit, Word, WordState } from '../domain/types';
+import type { Award, Photo, PhotoKind, Profile, Test, Unit, Word, WordState } from '../domain/types';
 
 /** Storage boundary. S0: profiles; S1: tests + photos; grows per slice. */
 export interface Repository {
@@ -27,6 +27,9 @@ export interface Repository {
   /** removes the files from the bucket, keeps the rows with status deleted (D-004 default) */
   deletePhotoFiles(testId: string): Promise<void>;
   listWordStates(testId: string): Promise<WordState[]>;
+  listAwards(profileId: string): Promise<Award[]>;
+  /** upsert on (profile, kind, unit, ref); keeps the better value */
+  saveAward(a: Award): Promise<void>;
   saveWordState(s: WordState): Promise<void>;
   addSession(s: { profileId: string; kind: 'study' | 'mock'; unitId: string | null; startedAt: string; items: unknown[]; score?: number; maxScore?: number }): Promise<void>;
   /** everything the user owns, for the JSON backup (blueprint §7) */

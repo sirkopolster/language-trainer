@@ -136,6 +136,19 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .feedback .btn { margin-top: var(--s-3); }
 .diff-bad { color: var(--bad); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; }
 
+.plan { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+.plan li { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-2) var(--s-3); border-radius: var(--r-md); background: var(--bg); }
+.plan-next { outline: 2px solid var(--primary); background: var(--primary-soft) !important; }
+.plan-done { color: var(--muted); }
+.plan-n { width: 24px; height: 24px; border-radius: 50%; background: var(--card); display: grid; place-items: center; font-size: var(--fs-xs); font-weight: 700; }
+.plan-words { margin: 0; padding-left: var(--s-4); color: var(--muted); font-size: var(--fs-sm); display: flex; flex-direction: column; gap: var(--s-1); }
+.stars { display: inline-flex; gap: 2px; }
+.stars-big { gap: var(--s-1); transform: scale(1.8); margin: var(--s-3) 0; }
+.star-on { color: var(--accent); }
+.star-off { color: var(--line); }
+.result { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--s-2); padding: var(--s-3) 0; }
+.crown-big { color: var(--accent); transform: scale(2.2); margin: var(--s-3) 0; display: inline-block; }
+
 /* ---------- Photo grid (S1) ---------- */
 .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
 .thumb { position: relative; aspect-ratio: 3 / 4; border-radius: var(--r-md); overflow: hidden; background: var(--primary-soft); }

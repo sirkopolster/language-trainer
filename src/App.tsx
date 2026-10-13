@@ -11,6 +11,7 @@ import { ProfileScreen } from './ui/features/profile/ProfileScreen';
 import { TestScreen } from './ui/features/test/TestScreen';
 import { ReviewScreen } from './ui/features/review/ReviewScreen';
 import { LearnScreen } from './ui/features/learn/LearnScreen';
+import { LessonScreen } from './ui/features/learn/LessonScreen';
 
 const router = createBrowserRouter([
   { path: '/', element: <Home />, errorElement: <RouteError /> },
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
   { path: '/t/:testId', element: <TestScreen />, errorElement: <RouteError /> },
   { path: '/t/:testId/review', element: <ReviewScreen />, errorElement: <RouteError /> },
   { path: '/t/:testId/learn', element: <LearnScreen />, errorElement: <RouteError /> },
+  { path: '/t/:testId/lesson/:unitId/:n', element: <LessonScreen />, errorElement: <RouteError /> },
   { path: '/styleguide', element: <Styleguide /> },
   { path: '*', element: <Navigate to="/" replace /> },
 ]);

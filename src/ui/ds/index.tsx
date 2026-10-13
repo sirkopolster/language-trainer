@@ -161,4 +161,5 @@ export const HomeIcon = () => svg('M3 11l9-8 9 8v10h-6v-6H9v6H3z');
 export const BookIcon = () => svg('M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4zM20 4h-7a3 3 0 00-3 3v13a2 2 0 012-2h8z');
 export const TestIcon = () => svg('M9 4h6l1 2h3v14H5V6h3zM9 12l2 2 4-4');
 export const UserIcon = () => svg('M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0');
+export const BulbIcon = () => svg('M9 18h6M10 21h4M12 3a6 6 0 00-4 10.5c.6.6 1 1.3 1 2.5h6c0-1.2.4-1.9 1-2.5A6 6 0 0012 3z');
 export const FlameIcon = () => svg('M12 3c1 3 4 5 4 9a4 4 0 01-8 0c0-1 .5-2 1-3 0 2 1 3 2 3 0-3-1-5 1-9z', true);

@@ -1,26 +1,22 @@
 import { useState, type FormEvent } from 'react';
 import type { Choice, Exercise, Gaps, Tiles, Write } from '../../../domain/exercises';
 import { fillGaps } from '../../../domain/exercises';
-import { Button } from '../../ds';
+import { Button, BulbIcon } from '../../ds';
 
 /** One exercise = prompt + answer input. Calls onAnswer with the learner's sentence (or option). Locked after answering. */
-export function ExerciseView({ ex, locked, reveal, onAnswer }: { ex: Exercise; locked: boolean; reveal?: boolean; onAnswer: (typed: string) => void }) {
-  const [memorised, setMemorised] = useState(false);
-  if (reveal && !memorised) return (
-    <div className="stack">
-      <div className="card card-flat">
-        <div className="text-sm muted">Neuer Satz, merk ihn dir:</div>
-        <div className="h2" data-testid="prompt">{ex.prompt}</div>
-        <div className="h3" style={{ color: 'var(--primary)', marginTop: 'var(--s-2)' }}>{ex.answer}</div>
-      </div>
-      <Button block data-testid="memorised" onClick={() => setMemorised(true)}>Gemerkt</Button>
-    </div>
-  );
+export function ExerciseView({ ex, locked, hint, onHint, onAnswer }: { ex: Exercise; locked: boolean; /** show a bulb that reveals the answer (level 0) */ hint?: boolean; onHint?: () => void; onAnswer: (typed: string) => void }) {
+  const [shown, setShown] = useState(false);
   return (
     <div className="stack">
       <div className="card card-flat">
-        <div className="text-sm muted">Auf Englisch:</div>
-        <div className="h2" data-testid="prompt">{ex.prompt}</div>
+        <div className="row-between">
+          <div className="grow">
+            <div className="text-sm muted">Auf Englisch:</div>
+            <div className="h2" data-testid="prompt">{ex.prompt}</div>
+          </div>
+          {hint && !locked && <button type="button" className={`iconbtn${shown ? ' iconbtn-on' : ''}`} data-testid="hint" aria-label="Tipp" onClick={() => { if (!shown) { setShown(true); onHint?.(); } }}><BulbIcon /></button>}
+        </div>
+        {shown && <div className="text-md" style={{ color: 'var(--primary)', marginTop: 'var(--s-2)' }}>{ex.answer}</div>}
       </div>
       {ex.type === 'choice' && <ChoiceView ex={ex} locked={locked} onAnswer={onAnswer} />}
       {ex.type === 'tiles' && <TilesView ex={ex} locked={locked} onAnswer={onAnswer} />}

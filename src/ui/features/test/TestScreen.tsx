@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
-import type { Photo, PhotoKind, Test } from '../../../domain/types';
-import { AppBar, BackIcon, Badge, Button, CameraIcon, Card, useToast } from '../../ds';
+import type { Award, Photo, PhotoKind, Test, Unit, Word } from '../../../domain/types';
+import { PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
+import { AppBar, BackIcon, Badge, Button, CameraIcon, Card, CrownIcon, List, ListItem, StarIcon, useToast } from '../../ds';
 import { resizeToJpeg } from '../photos/resize';
 
 const SECTION_LABEL: Record<string, string> = { translate: 'Übersetzen', gap: 'Lückentext', choice: 'Auswahl', match: 'Zuordnen', other: 'Sonstige' };
@@ -24,9 +25,12 @@ export function TestScreen() {
   const [extracting, setExtracting] = useState<string | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
   const [learn, setLearn] = useState<{ active: number; due: number } | null>(null);
+  const [lessons, setLessons] = useState<{ units: Unit[]; words: Word[]; awards: Award[] } | null>(null);
 
-  const load = () => Promise.all([repo.listPhotos(testId), repo.listWords(testId), repo.listWordStates(testId)]).then(([p, w, st]) => {
+  const load = () => Promise.all([repo.listPhotos(testId), repo.listWords(testId), repo.listWordStates(testId), repo.listUnits(testId)]).then(async ([p, w, st, units]) => {
     setPhotos(p); setReviewCount(w.filter((x) => x.status === 'review').length);
+    const t = test ?? (await repo.getTest(testId));
+    setLessons({ units, words: w, awards: await repo.listAwards(t.profileId) });
     const now = new Date(); const states = new Map(st.map((s) => [s.wordId, s]));
     const active = w.filter((x) => x.status === 'active');
     setLearn({ active: active.length, due: active.filter((x) => { const s = states.get(x.id); return !s || (new Date(s.dueAt) <= now && !(s.box === 5 && s.lastResult)); }).length });
@@ -82,12 +86,26 @@ export function TestScreen() {
     <>
       <AppBar title={test?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => (test ? nav(`/p/${test.profileId}`) : nav('/'))}><BackIcon /></button>} />
       <main className="page stack">
-        {learn && learn.active > 0 && (
+        {lessons && lessons.units.map((u) => {
+          const ls = splitLessons(lessons.words).filter((l) => l.unitId === u.id);
+          if (!ls.length) return null;
+          return (
+            <Card key={u.id} title={u.label}>
+              <List>
+                {ls.map((l) => {
+                  const p = lessonProgress(lessons.awards, u.id, l.n);
+                  return <ListItem key={l.n} testId={`lesson-${u.id}-${l.n}`} lead={p.crown ? <span style={{ color: 'var(--accent)' }}><CrownIcon /></span> : <span>{l.n}</span>} title={`Lektion ${l.n}`} sub={p.nextPart === 0 ? `${l.words.length} Sätze · noch nicht begonnen` : p.nextPart < PARTS.length ? `Runde ${p.nextPart + 1} von ${PARTS.length}` : `${p.total} von 15 Sternen`} trail={p.total > 0 ? <span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{p.total}</span> : undefined} onClick={() => nav(`/t/${testId}/lesson/${u.id}/${l.n}`)} />;
+                })}
+              </List>
+            </Card>
+          );
+        })}
+        {learn && learn.active > 0 && learn.due > 0 && lessons && splitLessons(lessons.words).some((l) => lessonProgress(lessons.awards, l.unitId, l.n).nextPart > 0) && (
           <Card accent>
             <div className="row"><div className="grow">
-              <div className="h3">{learn.due > 0 ? `${learn.due} Sätze fällig` : 'Alles gelernt für heute'}</div>
-              <div className="text-sm muted">{learn.active} Sätze im Training</div>
-            </div><Button data-testid="learn" onClick={() => nav(`/t/${testId}/learn`)} disabled={learn.due === 0}>Lernen</Button></div>
+              <div className="h3">{learn.due} Sätze zum Wiederholen</div>
+              <div className="text-sm muted">Gemischt aus allen begonnenen Lektionen</div>
+            </div><Button data-testid="learn" onClick={() => nav(`/t/${testId}/learn`)}>Wiederholen</Button></div>
           </Card>
         )}
         {SECTIONS.map((s) => (

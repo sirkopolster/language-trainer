@@ -32,7 +32,7 @@ try {
       const ans = SENTENCES.find(([de]) => de === prompt)[1];
       const type = (await t('option').count()) ? 'choice' : (await t('tile').count()) ? 'tiles' : (await t('gap').count()) ? 'gaps' : 'write';
       const name = type + (type === 'gaps' && (await t('gap').first().inputValue()) ? '-hint' : '');
-      if (type === 'choice' && i === 0) { await t('hint').click(); await shot('choice-hint'); }
+      if (type === 'choice' && i === 0) { await t('hint').click(); await shot('choice-hint-ask'); await t('hint-yes').click(); await shot('choice-hint'); }
       if (!seen.has(name)) { await shot(name); seen.add(name); }
       if (type === 'choice') await page.getByTestId('option').filter({ hasText: ans }).first().click();
       else if (type === 'tiles') { for (const w of ans.split(' ')) await page.locator('.tile-bank').getByRole('button', { name: w, exact: true, disabled: false }).first().click(); await t('submit').click(); }

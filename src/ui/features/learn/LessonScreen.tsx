@@ -16,7 +16,7 @@ const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'wa
   wrong: { title: 'Noch nicht. So ist es richtig:', tone: 'bad' },
 };
 type Step = { word: Word; ex: Exercise; retry: boolean };
-type Phase = { kind: 'plan' } | { kind: 'run'; part: number; queue: Step[]; done: number; mistakes: number; feedback: Comparison | null; hintUsed: boolean } | { kind: 'partDone'; part: number; stars: number } | { kind: 'lessonDone'; crown: boolean; total: number };
+type Phase = { kind: 'plan' } | { kind: 'run'; part: number; queue: Step[]; done: number; mistakes: number; hints: number; feedback: Comparison | null; hintUsed: boolean } | { kind: 'partDone'; part: number; stars: number; mistakes: number; hints: number } | { kind: 'lessonDone'; crown: boolean; total: number };
 
 /** D-012 lesson: 5 sentences through Wählen → Bauen → Lücken → Lücken ohne Hilfe → Schreiben. Plan first, stars per part, crown when all parts are perfect. */
 export function LessonScreen() {
@@ -45,7 +45,7 @@ export function LessonScreen() {
   function startPart(part: number) {
     if (!lesson) return;
     const queue = shuffle(lesson.words, Math.random).map((word) => ({ word, ex: build(word, PARTS[part].type, pool), retry: false }));
-    setPhase({ kind: 'run', part, queue, done: 0, mistakes: 0, feedback: null, hintUsed: false });
+    setPhase({ kind: 'run', part, queue, done: 0, mistakes: 0, hints: 0, feedback: null, hintUsed: false });
   }
 
   function answer(typed: string) {
@@ -61,7 +61,7 @@ export function LessonScreen() {
       setStates((m) => new Map(m).set(step.word.id, next));
       repo.saveWordState(next).catch((e: Error) => toast(e.message, 'bad'));
     }
-    setPhase({ ...phase, feedback: c, mistakes: phase.mistakes + (!step.retry && (!c.correct || phase.hintUsed) ? 1 : 0) });
+    setPhase({ ...phase, feedback: c, mistakes: phase.mistakes + (!step.retry && (!c.correct || phase.hintUsed) ? 1 : 0), hints: phase.hints + (!step.retry && phase.hintUsed ? 1 : 0) });
   }
 
   function proceed() {
@@ -83,7 +83,7 @@ export function LessonScreen() {
     if (crown) nextAwards.push(crown);
     // show the result right away, persist in the background
     setAwards(nextAwards);
-    setPhase({ kind: 'partDone', part: phase.part, stars });
+    setPhase({ kind: 'partDone', part: phase.part, stars, mistakes: phase.mistakes, hints: phase.hints });
     const items = log; setLog([]);
     const save = async () => { await repo.saveAward(star); if (crown) await repo.saveAward(crown); await repo.addSession({ profileId: test.profileId, kind: 'study', unitId, startedAt: new Date().toISOString(), items }); };
     save().catch((e: Error) => toast(e.message, 'bad'));
@@ -117,7 +117,7 @@ export function LessonScreen() {
       <AppBar title={title} />
       <main className="page stack">
         <Card accent>
-          <div className="result"><div className="h2">Runde {phase.part + 1}: {PARTS[phase.part].label}</div><Stars n={phase.stars} big /><p className="text-sm muted">{phase.stars === 3 ? 'Perfekt, kein Fehler!' : phase.stars === 2 ? 'Gut, fast fehlerfrei.' : 'Geschafft. Beim nächsten Mal klappt mehr.'}</p></div>
+          <div className="result"><div className="h2">Runde {phase.part + 1}: {PARTS[phase.part].label}</div><Stars n={phase.stars} big /><p className="text-sm muted">{phase.stars === 3 ? 'Perfekt, kein Fehler!' : phase.stars === 2 ? 'Gut, fast fehlerfrei.' : 'Geschafft. Beim nächsten Mal klappt mehr.'}</p>{phase.mistakes > 0 && <p className="text-sm muted" data-testid="part-detail">{[phase.mistakes - phase.hints > 0 ? `${phase.mistakes - phase.hints} Fehler` : '', phase.hints > 0 ? `${phase.hints} Tipp genutzt (kostet je einen Stern)` : ''].filter(Boolean).join(' · ')}</p>}</div>
         </Card>
         {phase.part + 1 < PARTS.length
           ? <Button block data-testid="part-next" onClick={() => startPart(phase.part + 1)}>Runde {phase.part + 2}: {PARTS[phase.part + 1].label}</Button>

@@ -6,6 +6,7 @@ import { Button, BulbIcon } from '../../ds';
 /** One exercise = prompt + answer input. Calls onAnswer with the learner's sentence (or option). Locked after answering. */
 export function ExerciseView({ ex, locked, hint, onHint, onAnswer }: { ex: Exercise; locked: boolean; /** show a bulb that reveals the answer (level 0) */ hint?: boolean; onHint?: () => void; onAnswer: (typed: string) => void }) {
   const [shown, setShown] = useState(false);
+  const [asking, setAsking] = useState(false);
   return (
     <div className="stack">
       <div className="card card-flat">
@@ -14,8 +15,9 @@ export function ExerciseView({ ex, locked, hint, onHint, onAnswer }: { ex: Exerc
             <div className="text-sm muted">Auf Englisch:</div>
             <div className="h2" data-testid="prompt">{ex.prompt}</div>
           </div>
-          {hint && !locked && <button type="button" className={`iconbtn${shown ? ' iconbtn-on' : ''}`} data-testid="hint" aria-label="Tipp" onClick={() => { if (!shown) { setShown(true); onHint?.(); } }}><BulbIcon /></button>}
+          {hint && !locked && <button type="button" className={`iconbtn${shown ? ' iconbtn-on' : ''}`} data-testid="hint" aria-label="Tipp" onClick={() => { if (!shown) setAsking(true); }}><BulbIcon /></button>}
         </div>
+        {asking && !shown && <div className="row" style={{ marginTop: 'var(--s-2)' }}><span className="text-sm muted grow">Tipp zeigen? Kostet einen Stern.</span><Button small variant="secondary" onClick={() => setAsking(false)}>Nein</Button><Button small data-testid="hint-yes" onClick={() => { setAsking(false); setShown(true); onHint?.(); }}>Ja</Button></div>}
         {shown && <div className="text-md" style={{ color: 'var(--primary)', marginTop: 'var(--s-2)' }}>{ex.answer}</div>}
       </div>
       {ex.type === 'choice' && <ChoiceView ex={ex} locked={locked} onAnswer={onAnswer} />}

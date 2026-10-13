@@ -70,7 +70,7 @@ try {
       await t('prompt').waitFor();
       const prompt = await t('prompt').innerText();
       const answer = SENTENCES.find(([de]) => de === prompt)[1];
-      if (i === 0) await t('hint').click();
+      if (i === 0) { await t('hint').click(); await t('hint-yes').click(); }
       await page.getByTestId('option').filter({ hasText: answer }).first().click();
       await page.getByText('Richtig!').waitFor();
       await t('next').click();

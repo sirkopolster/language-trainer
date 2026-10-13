@@ -35,8 +35,8 @@ try {
       if (type === 'choice' && i === 0) { await t('hint').click(); await shot('choice-hint-ask'); await t('hint-yes').click(); await shot('choice-hint'); }
       if (!seen.has(name)) { await shot(name); seen.add(name); }
       if (type === 'choice') await page.getByTestId('option').filter({ hasText: ans }).first().click();
-      else if (type === 'tiles') { for (const w of ans.split(' ')) await page.locator('.tile-bank').getByRole('button', { name: w, exact: true, disabled: false }).first().click(); await t('submit').click(); }
-      else if (type === 'gaps') { const gaps = await t('gap').all(); const words = ans.split(' '); for (const g of gaps) { const len = Number((await g.evaluate((el) => el.style.width)).replace('ch', '')) - 3; const first = await g.inputValue(); await g.fill(words.find((w) => w.length === len && (!first || w.startsWith(first))) ?? words.find((w) => w.length === len) ?? 'x'); } await t('submit').click(); }
+      else if (type === 'tiles') { for (const w of ans.split(' ').flatMap((x) => { const m = x.match(/^(.*?)([.,!?;:]+)$/); return m && m[1] ? [m[1], m[2]] : [x]; })) await page.locator('.tile-bank').getByRole('button', { name: w, exact: true, disabled: false }).first().click(); await t('submit').click(); }
+      else if (type === 'gaps') { const gaps = await t('gap').all(); const words = ans.split(' '); for (const g of gaps) { const len = Number((await g.evaluate((el) => el.style.width)).replace('ch', '')) - 3; const first = await g.inputValue(); const toks = words.map((w) => w.replace(/[.,!?;:]+$/, '')); await g.fill(toks.find((w) => w.length === len && (!first || w.startsWith(first))) ?? toks.find((w) => w.length === len) ?? 'x'); } await t('submit').click(); }
       else { await t('write').fill(i === 1 ? ans.toLowerCase().replace(/[.!?]$/, '') : i === 2 ? 'totally wrong sentence' : ans); await t('submit').click(); }
       await t('feedback').waitFor();
       const fb = await t('feedback').innerText();

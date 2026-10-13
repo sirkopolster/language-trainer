@@ -128,6 +128,7 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .tile:disabled { opacity: .3; cursor: default; }
 .tile-used { border-color: var(--primary); background: var(--primary-soft); opacity: 1; }
 .gap-line { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-2); align-items: center; font-size: var(--fs-md); line-height: 2.2; }
+.gap-punct { margin-left: calc(-1 * var(--s-2) + 2px); }
 .gap-input { display: inline-block; min-height: 40px; padding: 0 var(--s-2); font-size: var(--fs-md); }
 .feedback { border: 2px solid var(--line); }
 .feedback-good { border-color: var(--good); background: var(--good-soft); }

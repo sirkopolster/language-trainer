@@ -22,7 +22,7 @@ export function makeChoice(word: Word, pool: Word[], rng: () => number): Choice 
 
 /** Word tiles of the answer plus 2 distractor words from other sentences, shuffled. */
 export function makeTiles(word: Word, pool: Word[], rng: () => number): Tiles {
-  const own = word.target.split(/\s+/);
+  const own = tokenize(word.target);
   const ownSet = new Set(own.map((w) => strip(w).toLowerCase()));
   const candidates = shuffle(pool.filter((w) => w.id !== word.id).flatMap((w) => w.target.split(/\s+/)).map(strip).filter((w) => w && !ownSet.has(w.toLowerCase())), rng);
   const distractors = [...new Set(candidates)].slice(0, 2);
@@ -31,9 +31,9 @@ export function makeTiles(word: Word, pool: Word[], rng: () => number): Tiles {
 
 /** Gaps on content words: with hint = 1–2 gaps and first letter shown; without = about half the content words, no letters. */
 export function makeGaps(word: Word, hint: boolean, rng: () => number): Gaps {
-  const tokens = word.target.split(/\s+/);
+  const tokens = tokenize(word.target);
   let idx = tokens.map((t, i) => (isContent(t) ? i : -1)).filter((i) => i >= 0);
-  if (idx.length === 0) idx = tokens.map((_, i) => i).filter((i) => tokens[i].length >= 2);
+  if (idx.length === 0) idx = tokens.map((_, i) => i).filter((i) => !isPunct(tokens[i]) && tokens[i].length >= 2);
   const n = hint ? Math.min(2, idx.length) : Math.max(1, Math.ceil(idx.length / 2));
   const gaps = new Set(shuffle(idx, rng).slice(0, n));
   return {
@@ -46,5 +46,18 @@ export function makeGaps(word: Word, hint: boolean, rng: () => number): Gaps {
 
 export const makeWrite = (word: Word): Write => ({ type: 'write', prompt: word.source, answer: word.target });
 
+/** Splits a sentence into word tokens and separate punctuation tokens: "Don't feed the animals!" → ["Don't","feed","the","animals","!"] */
+export function tokenize(sentence: string): string[] {
+  const out: string[] = [];
+  for (const w of sentence.split(/\s+/).filter(Boolean)) {
+    const m = w.match(/^(.*?)([.,!?;:]+)$/);
+    if (m && m[1]) { out.push(m[1], m[2]); } else out.push(w);
+  }
+  return out;
+}
+export const isPunct = (t: string) => /^[.,!?;:]+$/.test(t);
+/** Joins tokens back, no space before punctuation. */
+export const joinTokens = (tokens: string[]) => tokens.reduce((s, t) => (s === '' ? t : isPunct(t) ? s + t : `${s} ${t}`), '');
+
 /** Rebuilds the learner's sentence from gap inputs, keeping the given tokens. */
-export const fillGaps = (g: Gaps, inputs: string[]) => g.tokens.map((t, i) => (t.gap ? inputs[i] ?? '' : t.text)).join(' ');
+export const fillGaps = (g: Gaps, inputs: string[]) => joinTokens(g.tokens.map((t, i) => (t.gap ? (inputs[i] ?? '').trim() : t.text)));

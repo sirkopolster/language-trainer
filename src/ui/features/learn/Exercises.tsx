@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import type { Choice, Exercise, Gaps, Tiles, Write } from '../../../domain/exercises';
-import { fillGaps } from '../../../domain/exercises';
+import { fillGaps, isPunct, joinTokens } from '../../../domain/exercises';
 import { Button, BulbIcon } from '../../ds';
 
 /** One exercise = prompt + answer input. Calls onAnswer with the learner's sentence (or option). Locked after answering. */
@@ -41,7 +41,7 @@ function ChoiceView({ ex, locked, onAnswer }: { ex: Choice; locked: boolean; onA
 
 function TilesView({ ex, locked, onAnswer }: { ex: Tiles; locked: boolean; onAnswer: (t: string) => void }) {
   const [used, setUsed] = useState<number[]>([]);
-  const sentence = used.map((i) => ex.tiles[i]).join(' ');
+  const sentence = joinTokens(used.map((i) => ex.tiles[i]));
   return (
     <div className="stack">
       <div className="tile-slot" aria-label="Dein Satz">{used.length === 0 ? <span className="muted text-sm">Tippe die Wörter in der richtigen Reihenfolge</span> : used.map((i, k) => <button key={k} type="button" className="tile tile-used" disabled={locked} onClick={() => setUsed(used.filter((_, j) => j !== k))}>{ex.tiles[i]}</button>)}</div>
@@ -59,7 +59,7 @@ function GapsView({ ex, locked, onAnswer }: { ex: Gaps; locked: boolean; onAnswe
       <div className="gap-line">
         {ex.tokens.map((t, i) => t.gap
           ? <input key={i} data-testid="gap" className="input gap-input" style={{ width: `${Math.max(5, t.text.length + 3)}ch` }} value={inputs[i]} disabled={locked} autoCapitalize="none" autoComplete="off" onChange={(e) => setInputs(inputs.map((v, j) => (j === i ? e.target.value : v)))} />
-          : <span key={i}>{t.text}</span>)}
+          : <span key={i} className={isPunct(t.text) ? 'gap-punct' : undefined}>{t.text}</span>)}
       </div>
       <Button block data-testid="submit" type="submit" disabled={locked || ex.tokens.some((t, i) => t.gap && !inputs[i].trim())}>Prüfen</Button>
     </form>

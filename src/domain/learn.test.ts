@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { compare, levenshtein, normalize } from './compare';
 import { applyAnswer, composeSession, exerciseFor, newState } from './scheduler';
-import { fillGaps, makeChoice, makeGaps, makeTiles } from './exercises';
+import { fillGaps, joinTokens, makeChoice, makeGaps, makeTiles, tokenize } from './exercises';
 import type { Word } from './types';
 
 const now = new Date('2026-10-13T18:00:00Z');
@@ -86,10 +86,15 @@ describe('exercises', () => {
     expect(new Set(c.options).size).toBe(4);
     expect(c.options).toContain('The elephant is big.');
   });
-  it('tiles contain every word of the answer plus 2 distractors', () => {
+  it('tokenizes punctuation as its own token and joins it back', () => {
+    expect(tokenize("Don't feed the animals!")).toEqual(["Don't", 'feed', 'the', 'animals', '!']);
+    expect(tokenize('Hello, world.')).toEqual(['Hello', ',', 'world', '.']);
+    expect(joinTokens(['Hello', ',', 'world', '.'])).toBe('Hello, world.');
+  });
+  it('tiles contain every token of the answer (punctuation separate) plus 2 distractors', () => {
     const t = makeTiles(pool[0], pool, seq(0.5, 0.2, 0.9));
-    expect(t.tiles).toHaveLength(6);
-    for (const x of 'The elephant is big.'.split(' ')) expect(t.tiles).toContain(x);
+    expect(t.tiles).toHaveLength(7);
+    for (const x of ['The', 'elephant', 'is', 'big', '.']) expect(t.tiles).toContain(x);
   });
   it('gaps hit content words; hint shows the first letter; fillGaps rebuilds', () => {
     const g = makeGaps(pool[0], true, seq(0.1, 0.9));
@@ -97,6 +102,8 @@ describe('exercises', () => {
     expect(gaps.length).toBeLessThanOrEqual(2);
     expect(gaps.every((t) => t.hint && t.hint.length === 1)).toBe(true);
     expect(gaps.every((t) => !['The', 'is'].includes(t.text))).toBe(true);
+    expect(g.tokens.map((t) => t.text)).toEqual(['The', 'elephant', 'is', 'big', '.']);
+    expect(g.tokens[4].gap).toBe(false);
     const inputs = g.tokens.map((t) => (t.gap ? t.text : ''));
     expect(fillGaps(g, inputs)).toBe('The elephant is big.');
     expect(makeGaps(pool[0], false, seq(0.1)).tokens.filter((t) => t.gap).every((t) => !t.hint)).toBe(true);

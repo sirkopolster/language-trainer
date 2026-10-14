@@ -3,11 +3,11 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Award, Test, Unit, Word } from '../../../domain/types';
 import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
-import { AppBar, BackIcon, BookIcon, Button, Card, CrownIcon, EmptyState, List, ListItem, ListIcon, Modal, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, CrownIcon, EmptyState, FileTextIcon, GraduationIcon, List, ListItem, Modal, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
 import { SettingsTab } from './SettingsTab';
 
 type Tab = 'lernen' | 'probetest' | 'einstellungen';
-const TABS = [{ id: 'einstellungen', label: 'Testinhalt', icon: <ListIcon /> }, { id: 'lernen', label: 'Lernen', icon: <BookIcon /> }, { id: 'probetest', label: 'Probetest', icon: <TestIcon /> }];
+const TABS = [{ id: 'einstellungen', label: 'Testinhalt', icon: <FileTextIcon /> }, { id: 'lernen', label: 'Lernen', icon: <GraduationIcon /> }, { id: 'probetest', label: 'Probetest', icon: <ClipboardCheckIcon /> }];
 
 /** One test: three tabs. Lernen (parts, review), Probetest (S4), Einstellungen (upload, topics, sentence list). Opens on Lernen once sentences exist. */
 export function TestScreen() {
@@ -52,7 +52,7 @@ export function TestScreen() {
         {tab === 'einstellungen' && test && lessons && <SettingsTab test={test} words={lessons.words} onTestChange={setTest} onWordsChange={load} />}
         {tab === 'lernen' && lessons && (
           allLessons.length === 0 ? (
-            <Card flat><EmptyState icon={<BookIcon />} title="Noch keine Sätze" text="Lade unter Testinhalt die Vokabelseiten hoch und lass sie auswerten, dann geht es hier los." action={<Button onClick={() => setTab('einstellungen')}>Zum Testinhalt</Button>} /></Card>
+            <Card flat><EmptyState icon={<GraduationIcon />} title="Noch keine Sätze" text="Lade unter Testinhalt die Vokabelseiten hoch und lass sie auswerten, dann geht es hier los." action={<Button onClick={() => setTab('einstellungen')}>Zum Testinhalt</Button>} /></Card>
           ) : (
             <>
               {learn && learn.due > 0 && allLessons.some((l) => lessonProgress(lessons.awards, l.unitId, l.n).nextPart > 0) && (

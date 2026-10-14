@@ -183,6 +183,9 @@ export type IconColor = 'violet' | 'orange' | 'green' | 'blue' | 'pink' | 'yello
 export function ColorIcon({ color, large, children }: { color: IconColor; large?: boolean; children: ReactNode }) {
   return <span className={cx('cicon', `cicon-${color}`, large && 'cicon-lg')}>{children}</span>;
 }
+export const SproutIcon = () => svg('M7 20h10M10 20c5.5-2.5.8-6.4 3-10M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8zM14.1 6a7 7 0 00-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z');
+export const RocketIcon = () => svg('M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09zM12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2zM9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5');
+export const TrophyIcon = () => svg('M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0012 0V2z');
 export const CloseIcon = () => svg('M18 6L6 18M6 6l12 12');
 export const PencilIcon = () => svg('M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5z');
 export const FileTextIcon = () => svg('M15 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7zM14 2v4a2 2 0 002 2h4M10 9H8M16 13H8M16 17H8');

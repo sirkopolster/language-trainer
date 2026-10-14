@@ -1,19 +1,14 @@
 import type { ReactNode } from 'react';
 import type { Award, Test, Unit, Word } from '../../../domain/types';
 import { MAX_STARS, lessonProgress, splitLessons } from '../../../domain/lessons';
-import { CrownIcon, FlameIcon, GraduationIcon, StarIcon, TestIcon } from '../../ds';
+import { ColorIcon, CrownIcon, FlameIcon, GraduationIcon, RocketIcon, SproutIcon, StarIcon, TestIcon, TrophyIcon } from '../../ds';
 import type { SessionSummary } from '../../../domain/stats';
 import { fmtDate } from './NewTestModal';
 
 /** days until the test date, 0 = today, negative = past */
 export const daysUntil = (d: string | null) => (d ? Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86_400_000) : null);
 
-export function dateLine(t: Test): string {
-  const n = daysUntil(t.testDate);
-  if (n === null) return 'Noch kein Testdatum';
-  const when = n === 0 ? 'heute' : n === 1 ? 'morgen' : n > 1 ? `in ${n} Tagen` : n === -1 ? 'gestern' : `vor ${-n} Tagen`;
-  return `Test am ${fmtDate(t.testDate)} · ${when}`;
-}
+export const dateLine = (t: Test) => (t.testDate ? `Test am ${fmtDate(t.testDate)}` : 'Noch kein Testdatum');
 
 /** achievements of one test: days learned, answers, stars, parts done, crowns */
 export function testProgress(t: Test, units: Unit[], words: Word[], awards: Award[], sessions: SessionSummary[] = []) {
@@ -27,7 +22,11 @@ export function testProgress(t: Test, units: Unit[], words: Word[], awards: Awar
   return { parts: lessons.length, done, stars, crowns, days, answers, maxStars: lessons.length * MAX_STARS };
 }
 
-/** Home card: name large, test date, and only what was accomplished already (nothing shown while it is zero). */
+export type TestStatusLabel = 'new' | 'started' | 'done';
+export const testStatus = (p: ReturnType<typeof testProgress>): TestStatusLabel => (p.parts > 0 && p.done === p.parts ? 'done' : p.days > 0 || p.answers > 0 || p.stars > 0 ? 'started' : 'new');
+const STATUS = { new: { label: 'Noch nicht angefangen', color: 'blue' as const, icon: <SproutIcon /> }, started: { label: 'Angefangen', color: 'orange' as const, icon: <RocketIcon /> }, done: { label: 'Abgeschlossen', color: 'yellow' as const, icon: <TrophyIcon /> } };
+
+/** Home card: name large, test date, status, and only what was accomplished already (nothing shown while it is zero). */
 export function TestCard({ test, sub, progress, onClick }: { test: Test; sub?: ReactNode; progress: ReturnType<typeof testProgress>; onClick: () => void }) {
   const chips = [
     progress.days > 0 && { icon: <FlameIcon />, text: progress.days === 1 ? '1 Tag gelernt' : `${progress.days} Tage gelernt` },
@@ -40,6 +39,7 @@ export function TestCard({ test, sub, progress, onClick }: { test: Test; sub?: R
     <button type="button" className="testcard" data-testid={`test-${test.id}`} onClick={onClick}>
       <div className="testcard-name">{test.name}</div>
       <div className="text-sm muted">{dateLine(test)}{sub ? <> · {sub}</> : null}</div>
+      <div className="row" data-testid="test-status"><ColorIcon color={STATUS[testStatus(progress)].color}>{STATUS[testStatus(progress)].icon}</ColorIcon><span className="text-sm" style={{ fontWeight: 600 }}>{STATUS[testStatus(progress)].label}</span></div>
       {chips.length > 0 && <div className="row" style={{ flexWrap: 'wrap' }}>{chips.map((c) => <span key={c.text} className="chip"><span className="chip-icon">{c.icon}</span>{c.text}</span>)}</div>}
     </button>
   );

@@ -3,12 +3,12 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Award, Test, Unit, Word } from '../../../domain/types';
 import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
-import { AppBar, BackIcon, BookIcon, Button, Card, CrownIcon, EmptyState, GearIcon, List, ListItem, Modal, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, BookIcon, Button, Card, CrownIcon, EmptyState, List, ListItem, ListIcon, Modal, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
 import { SettingsTab } from './SettingsTab';
 
 const SECTION_LABEL: Record<string, string> = { translate: 'Übersetzen', gap: 'Lückentext', choice: 'Auswahl', match: 'Zuordnen', other: 'Sonstige' };
 type Tab = 'lernen' | 'probetest' | 'einstellungen';
-const TABS = [{ id: 'lernen', label: 'Lernen', icon: <BookIcon /> }, { id: 'probetest', label: 'Probetest', icon: <TestIcon /> }, { id: 'einstellungen', label: 'Einstellungen', icon: <GearIcon /> }];
+const TABS = [{ id: 'einstellungen', label: 'Testinhalt', icon: <ListIcon /> }, { id: 'lernen', label: 'Lernen', icon: <BookIcon /> }, { id: 'probetest', label: 'Probetest', icon: <TestIcon /> }];
 
 /** One test: three tabs. Lernen (parts, review), Probetest (S4), Einstellungen (upload, topics, sentence list). Opens on Lernen once sentences exist. */
 export function TestScreen() {
@@ -53,7 +53,7 @@ export function TestScreen() {
         {tab === 'einstellungen' && test && lessons && <SettingsTab test={test} words={lessons.words} onTestChange={setTest} onWordsChange={load} />}
         {tab === 'lernen' && lessons && (
           allLessons.length === 0 ? (
-            <Card flat><EmptyState icon={<BookIcon />} title="Noch keine Sätze" text="Lade unter Einstellungen die Vokabelseiten hoch und lass sie auswerten, dann geht es hier los." action={<Button onClick={() => setTab('einstellungen')}>Zu den Einstellungen</Button>} /></Card>
+            <Card flat><EmptyState icon={<BookIcon />} title="Noch keine Sätze" text="Lade unter Testinhalt die Vokabelseiten hoch und lass sie auswerten, dann geht es hier los." action={<Button onClick={() => setTab('einstellungen')}>Zum Testinhalt</Button>} /></Card>
           ) : (
             <>
               {learn && learn.due > 0 && allLessons.some((l) => lessonProgress(lessons.awards, l.unitId, l.n).nextPart > 0) && (
@@ -92,7 +92,7 @@ export function TestScreen() {
                 </div>
               </Card>
             ) : (
-              <Card flat><EmptyState icon={<TestIcon />} title="Kein Testformat" text="Lade unter Einstellungen einen alten Test hoch, dann baut die App den Probetest genauso auf." action={<Button onClick={() => setTab('einstellungen')}>Zu den Einstellungen</Button>} /></Card>
+              <Card flat><EmptyState icon={<TestIcon />} title="Kein Testformat" text="Lade unter Testinhalt einen alten Test hoch, dann baut die App den Probetest genauso auf." action={<Button onClick={() => setTab('einstellungen')}>Zum Testinhalt</Button>} /></Card>
             )}
             <Card accent><div className="h3">Probetest</div><p className="text-sm muted" style={{ margin: 0 }}>Kommt als Nächstes (S4): ein Test im echten Format mit Punkten, Bereitschaft und Krone.</p></Card>
           </>

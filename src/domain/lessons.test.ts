@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HALVES, PARTS, lessonProgress, partRef, splitLessons, starsFor } from './lessons';
+import { EASY_START, HALVES, PARTS, lessonProgress, partRef, roundOrder, splitLessons, starsFor } from './lessons';
 import type { Award, Word } from './types';
 
 const w = (id: string, unitId = 'u1'): Word => ({ id, unitId, source: id, target: id, example: null, priority: false, status: 'active' });
@@ -14,6 +14,19 @@ describe('splitLessons', () => {
   it('keeps units apart and ignores inactive words', () => {
     const l = splitLessons([w('a'), w('b', 'u2'), { ...w('c'), status: 'review' }]);
     expect(l.map((x) => [x.unitId, x.words.length])).toEqual([['u1', 1], ['u2', 1]]);
+  });
+});
+
+describe('roundOrder', () => {
+  it('starts with EN → DE, then mixes, every sentence once per direction, no sentence twice in a row', () => {
+    const words = Array.from({ length: 5 }, (_, i) => w(`s${i}`));
+    let seed = 7; const rng = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const order = roundOrder(words, rng);
+    expect(order).toHaveLength(10);
+    expect(order.slice(0, EASY_START).every((x) => x.dir === 'en-de')).toBe(true);
+    for (const d of ['en-de', 'de-en']) expect(new Set(order.filter((x) => x.dir === d).map((x) => x.word.id)).size).toBe(5);
+    for (let i = 1; i < order.length; i++) expect(order[i].word.id).not.toBe(order[i - 1].word.id);
+    expect(order.slice(EASY_START).some((x) => x.dir === 'de-en') && order.slice(EASY_START).some((x) => x.dir === 'en-de')).toBe(true);
   });
 });
 

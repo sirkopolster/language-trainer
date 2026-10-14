@@ -3,9 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Award, Test, Word, WordState } from '../../../domain/types';
 import { compare, type Comparison } from '../../../domain/compare';
-import { applyAnswer, newState, requeueIndex, shuffle } from '../../../domain/scheduler';
+import { applyAnswer, newState, requeueIndex } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
-import { HALVES, MAX_STARS, PARTS, lessonProgress, lessonRef, partRef, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
+import { HALVES, MAX_STARS, PARTS, lessonProgress, lessonRef, partRef, roundOrder, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
 import { AppBar, BackIcon, Button, Card, CrownIcon, Modal, ProgressBar, StarIcon, useToast } from '../../ds';
 import { ExerciseView } from './Exercises';
 
@@ -46,8 +46,8 @@ export function LessonScreen() {
 
   function startPart(part: number) {
     if (!lesson) return;
-    // first the whole set EN → DE (understand), then the whole set DE → EN (produce)
-    const queue = HALVES.flatMap((dir) => shuffle(lesson.words, Math.random).map((word) => ({ word, ex: build(word, PARTS[part].type, pool, dir), retry: false, dir })));
+    // easy start with a few EN → DE, then both directions mixed (D-017)
+    const queue = roundOrder(lesson.words, Math.random).map(({ word, dir }) => ({ word, ex: build(word, PARTS[part].type, pool, dir), retry: false, dir }));
     setPhase({ kind: 'run', part, queue, done: 0, mistakes: 0, hints: 0, feedback: null, hintUsed: false });
   }
 
@@ -117,7 +117,7 @@ export function LessonScreen() {
           </ul>
         </Card>
         <Card title="Fahrplan">
-          <p className="text-sm muted">Runde antippen zum Starten. Jede Runde erst Englisch → Deutsch, dann Deutsch → Englisch.</p>
+          <p className="text-sm muted">Runde antippen zum Starten. Jede Runde fragt alle Sätze in beide Richtungen, leicht beginnend.</p>
           <ol className="plan">
             {PARTS.map((p, i) => <li key={p.type}><button type="button" data-testid={`plan-${i}`} className={`plan-item${i === progress.nextPart ? ' plan-next' : i < progress.nextPart ? ' plan-done' : ''}`} onClick={() => startPart(i)}><span className="plan-n">{i + 1}</span><span className="grow">{p.label}</span><Stars n={progress.stars[p.type]} /></button></li>)}
           </ol>

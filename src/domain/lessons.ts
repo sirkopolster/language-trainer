@@ -1,6 +1,7 @@
 // Lessons (D-012): a unit is split into lessons of 5 sentences; each lesson runs the ladder parts in order. Pure.
 import type { ExerciseType } from './scheduler';
 import type { Direction } from './exercises';
+import { shuffle } from './scheduler';
 import type { Award, Word } from './types';
 
 export const LESSON_SIZE = 5;
@@ -12,6 +13,27 @@ export const PARTS: { type: ExerciseType; label: string; level: number }[] = [
   { type: 'write', label: 'Schreiben', level: 3 },
 ];
 export const HALVES: Direction[] = ['en-de', 'de-en'];
+/** how many EN → DE items open a round before both directions mix */
+export const EASY_START = 2;
+
+/**
+ * Order of one round: every sentence once per direction. The first EASY_START items are EN → DE (easy entry),
+ * the rest is a shuffled mix of both directions; the same sentence never comes twice in a row.
+ */
+export function roundOrder(words: Word[], rng: () => number): { word: Word; dir: Direction }[] {
+  const en = shuffle(words, rng).map((word) => ({ word, dir: 'en-de' as Direction }));
+  const head = en.slice(0, EASY_START);
+  let rest = shuffle([...en.slice(EASY_START), ...words.map((word) => ({ word, dir: 'de-en' as Direction }))], rng);
+  const out = [...head];
+  while (rest.length) {
+    const last = out[out.length - 1]?.word.id;
+    let i = rest.findIndex((x) => x.word.id !== last);
+    if (i === -1) i = 0;
+    out.push(rest[i]);
+    rest = rest.filter((_, j) => j !== i);
+  }
+  return out;
+}
 export const MAX_STARS = PARTS.length * 3;
 
 export interface Lesson { unitId: string; n: number; words: Word[] }

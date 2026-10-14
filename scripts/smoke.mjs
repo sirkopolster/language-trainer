@@ -74,6 +74,7 @@ try {
     await t('prompt').waitFor();
     if (!(await t('tile').count())) throw new Error('round 2 should be tiles');
     if ((await t('dir').innerText()) !== 'Englisch → Deutsch') throw new Error('round 2 should start EN → DE');
+
   });
   if (errors.length) throw new Error('console errors: ' + errors.join(' | '));
   console.log(steps.join('\n'), '\nSMOKE OK', base);

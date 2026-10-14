@@ -6,7 +6,6 @@ import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/
 import { AppBar, BackIcon, BookIcon, Button, Card, CrownIcon, EmptyState, List, ListItem, ListIcon, Modal, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
 import { SettingsTab } from './SettingsTab';
 
-const SECTION_LABEL: Record<string, string> = { translate: 'Übersetzen', gap: 'Lückentext', choice: 'Auswahl', match: 'Zuordnen', other: 'Sonstige' };
 type Tab = 'lernen' | 'probetest' | 'einstellungen';
 const TABS = [{ id: 'einstellungen', label: 'Testinhalt', icon: <ListIcon /> }, { id: 'lernen', label: 'Lernen', icon: <BookIcon /> }, { id: 'probetest', label: 'Probetest', icon: <TestIcon /> }];
 
@@ -83,19 +82,9 @@ export function TestScreen() {
           )
         )}
         {tab === 'probetest' && (
-          <>
-            {test?.format ? (
-              <Card title="So sieht der echte Test aus">
-                <div className="stack-sm">
-                  {test.format.sections.map((s, i) => <div key={i} className="row-between text-sm"><span>{SECTION_LABEL[s.type]}{s.label ? ` · ${s.label}` : ''}</span><span className="muted">{s.items} Aufgaben · {s.points} P.</span></div>)}
-                  <div className="row-between text-sm"><strong>Gesamt</strong><strong>{test.format.totalPoints} Punkte{test.format.passMark ? ` · bestanden ab ${test.format.passMark}` : ''}</strong></div>
-                </div>
-              </Card>
-            ) : (
-              <Card flat><EmptyState icon={<TestIcon />} title="Kein Testformat" text="Lade unter Testinhalt einen alten Test hoch, dann baut die App den Probetest genauso auf." action={<Button onClick={() => setTab('einstellungen')}>Zum Testinhalt</Button>} /></Card>
-            )}
-            <Card accent><div className="h3">Probetest</div><p className="text-sm muted" style={{ margin: 0 }}>Kommt als Nächstes (S4): ein Test im echten Format mit Punkten, Bereitschaft und Krone.</p></Card>
-          </>
+          !test?.format
+            ? <Card flat><EmptyState icon={<TestIcon />} title="Kein Testformat" text="Lade unter Testinhalt einen alten Test hoch, dann baut die App den Probetest genauso auf." action={<Button onClick={() => setTab('einstellungen')}>Zum Testinhalt</Button>} /></Card>
+            : <Card accent><div className="h3">Probetest</div><p className="text-sm muted" style={{ margin: 0 }}>Kommt als Nächstes (S4): ein Test im echten Format mit Punkten, Bereitschaft und Krone.</p></Card>
         )}
       </main>
       {tab && <TabBar tabs={TABS} active={tab} onSelect={setTab} />}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Profile, Test } from '../../../domain/types';
-import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, ColorIcon, EmptyState, Input, List, ListItem, Modal, TestIcon, useToast } from '../../ds';
+import { AppBar, Button, Card, ClipboardCheckIcon, ColorIcon, EmptyState, Input, List, ListItem, Modal, TestIcon, useToast } from '../../ds';
 import { NewTestModal, testSub } from '../test/NewTestModal';
 import { Stats } from '../home/Home';
 import type { Award } from '../../../domain/types';
@@ -55,7 +55,7 @@ export function ProfileScreen() {
 
   return (
     <>
-      <AppBar title={profile?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav('/')}><BackIcon /></button>} />
+      <AppBar title={profile?.name ?? '…'} onBack={() => nav('/')} />
       <main className="page stack">
         {stats && <Stats sessions={stats.sessions} awards={stats.awards} />}
         {tests === null ? <p className="muted text-sm">Lädt…</p> : tests.length === 0 ? (

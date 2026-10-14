@@ -55,6 +55,11 @@ export const supabaseRepository: Repository = {
     fail(error);
     return (data as AwardRow[]).map(toAward);
   },
+  async listSessions(profileId) {
+    const { data, error } = await supabase.from('sessions').select('started_at, kind, items').eq('profile_id', profileId);
+    fail(error);
+    return (data as { started_at: string; kind: 'study' | 'mock'; items: unknown[] }[]).map((r) => ({ startedAt: r.started_at, kind: r.kind, items: Array.isArray(r.items) ? r.items.length : 0 }));
+  },
   async adminCreateStudent(s) { await callAdmin({ action: 'create-student', ...s }); },
   async adminUpdateStudent(s) { await callAdmin({ action: 'update-student', ...s }); },
   async deleteProfile(id) {

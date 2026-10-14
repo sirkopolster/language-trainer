@@ -5,6 +5,8 @@ export interface Repository {
   getRole(): Promise<Role>;
   listProfiles(): Promise<Profile[]>;
   listAllAwards(): Promise<Award[]>;
+  /** started_at, kind and number of answered items per session (home stats) */
+  listSessions(profileId: string): Promise<{ startedAt: string; kind: 'study' | 'mock'; items: number }[]>;
   adminCreateStudent(s: { name: string; email: string; password: string; profileId?: string }): Promise<void>;
   adminUpdateStudent(s: { profileId: string; name?: string; email?: string; password?: string }): Promise<void>;
   addProfile(name: string): Promise<Profile>;

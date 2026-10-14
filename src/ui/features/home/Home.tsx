@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, supabaseRepository as repo } from '../../../storage/supabaseRepository';
+import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
+import { supabase } from '../../../storage/supabaseRepository';
+import { computeStats, type SessionSummary } from '../../../domain/stats';
+import { UserMenu } from '../account/UserMenu';
 import type { Award, Profile, Test } from '../../../domain/types';
-import { AppBar, Button, Card, CrownIcon, EmptyState, Input, List, ListItem, Modal, StarIcon, TestIcon, UserIcon, useToast } from '../../ds';
+import { AppBar, Button, Card, CrownIcon, EmptyState, FlameIcon, Input, List, ListItem, Modal, StarIcon, TestIcon, UserIcon, ClipboardCheckIcon, GraduationIcon, useToast } from '../../ds';
 import { NewTestModal, testSub } from '../test/NewTestModal';
 
 /**
@@ -21,8 +24,16 @@ export function Home() {
   const [name, setName] = useState('');
   const [kid, setKid] = useState<{ name: string; email: string; password: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [accountName, setAccountName] = useState('');
 
-  const load = () => Promise.all([repo.getRole(), repo.listProfiles(), repo.listAllTests(), repo.listAllAwards()]).then(([r, p, t, a]) => { setRole(r); setProfiles(p); setTests(t); setAwards(a); }).catch((e: Error) => toast(e.message, 'bad'));
+  const load = () => Promise.all([repo.getRole(), repo.listProfiles(), repo.listAllTests(), repo.listAllAwards()]).then(async ([r, p, t, a]) => {
+    setRole(r); setProfiles(p); setTests(t); setAwards(a);
+    const own = p.find((x) => x.own);
+    if (own) setSessions(await repo.listSessions(own.id));
+    const { data } = await supabase.auth.getUser();
+    setAccountName(own?.name ?? (r === 'admin' ? 'Eltern' : data.user?.email?.split('@')[0] ?? ''));
+  }).catch((e: Error) => toast(e.message, 'bad'));
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const me = profiles?.find((p) => p.own) ?? null;
@@ -54,13 +65,15 @@ export function Home() {
 
   return (
     <>
-      <AppBar title="SnapLearn" right={<Button small variant="ghost" onClick={() => supabase.auth.signOut()}>Abmelden</Button>} />
+      <AppBar title="SnapLearn" right={<UserMenu name={accountName} />} />
       <main className="page stack">
         {profiles === null || role === null ? <p className="muted text-sm">Lädt…</p> : role === 'student' ? (
           !me ? (
             <Card flat><EmptyState icon={<UserIcon />} title="Wie heißt du?" text="Nur dein Vorname, mehr braucht es nicht." action={<Button data-testid="profile-add" onClick={() => setNaming(true)}>Namen eingeben</Button>} /></Card>
           ) : (
             <>
+              <p className="h2" style={{ margin: 0 }}>Hallo {me.name}, schön, dass du wieder da bist.</p>
+              <Stats sessions={sessions} awards={awards.filter((a) => a.profileId === me.id)} />
               <div className="row-between">
                 <h2 className="h2">Aktuelle Tests</h2>
                 {tests.length > 0 && <Button small data-testid="test-add" onClick={() => setNewTest(true)}>Neuer Test</Button>}
@@ -74,6 +87,7 @@ export function Home() {
           )
         ) : (
           <>
+            <p className="h2" style={{ margin: 0 }}>Hallo, schön, dass du wieder da bist.</p>
             <div className="row-between">
               <h2 className="h2">Kinder</h2>
               <Button small data-testid="kid-add" onClick={() => setKid({ name: '', email: '', password: '' })}>Neues Kind</Button>
@@ -113,4 +127,15 @@ export function Home() {
       {me && <NewTestModal open={newTest} profiles={[me]} profileId={me.id} onClose={() => setNewTest(false)} onCreated={(t) => { setNewTest(false); nav(`/t/${t.id}`); }} />}
     </>
   );
+}
+
+export function Stats({ sessions, awards }: { sessions: SessionSummary[]; awards: Award[] }) {
+  const s = computeStats(sessions, awards);
+  const tiles = [
+    { n: s.days, l: s.days === 1 ? 'Tag gelernt' : 'Tage gelernt', icon: <FlameIcon /> },
+    { n: s.partsDone, l: s.partsDone === 1 ? 'Teil geschafft' : 'Teile geschafft', icon: <GraduationIcon /> },
+    { n: s.answers, l: 'Aufgaben beantwortet', icon: <StarIcon /> },
+    { n: s.mocks, l: s.mocks === 1 ? 'Probetest geschrieben' : 'Probetests geschrieben', icon: <ClipboardCheckIcon /> },
+  ];
+  return <div className="stats" data-testid="stats">{tiles.map((t) => <div key={t.l} className="stat"><span className="stat-icon">{t.icon}</span><div><div className="stat-n">{t.n}</div><div className="stat-l">{t.l}</div></div></div>)}</div>;
 }

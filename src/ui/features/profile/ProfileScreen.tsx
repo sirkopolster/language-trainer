@@ -4,6 +4,9 @@ import { supabaseRepository as repo } from '../../../storage/supabaseRepository'
 import type { Profile, Test } from '../../../domain/types';
 import { AppBar, BackIcon, Button, Card, EmptyState, Input, List, ListItem, Modal, TestIcon, useToast } from '../../ds';
 import { NewTestModal, testSub } from '../test/NewTestModal';
+import { Stats } from '../home/Home';
+import type { Award } from '../../../domain/types';
+import type { SessionSummary } from '../../../domain/stats';
 
 /** S1: a student's tests. One test = one learning goal (e.g. "Vokabeltest Unit 4"). */
 export function ProfileScreen() {
@@ -15,6 +18,7 @@ export function ProfileScreen() {
   const [adding, setAdding] = useState(false);
   const [edit, setEdit] = useState<{ name: string; email: string; password: string } | null>(null);
   const [role, setRole] = useState<'admin' | 'student'>('student');
+  const [stats, setStats] = useState<{ sessions: SessionSummary[]; awards: Award[] } | null>(null);
   const [attach, setAttach] = useState<{ email: string; password: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -45,6 +49,7 @@ export function ProfileScreen() {
   useEffect(() => {
     repo.listProfiles().then((ps) => setProfile(ps.find((p) => p.id === profileId) ?? null));
     repo.getRole().then(setRole);
+    Promise.all([repo.listSessions(profileId), repo.listAllAwards()]).then(([sessions, awards]) => setStats({ sessions, awards: awards.filter((a) => a.profileId === profileId) })).catch(() => undefined);
     load();
   }, [profileId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -52,6 +57,7 @@ export function ProfileScreen() {
     <>
       <AppBar title={profile?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav('/')}><BackIcon /></button>} />
       <main className="page stack">
+        {stats && <Stats sessions={stats.sessions} awards={stats.awards} />}
         {tests === null ? <p className="muted text-sm">Lädt…</p> : tests.length === 0 ? (
           <Card flat>
             <EmptyState icon={<TestIcon />} title="Welcher Test steht an?" text="Lege den nächsten Vokabeltest an. Danach fotografierst du die Vokabelseiten." action={<Button data-testid="test-add" onClick={() => setAdding(true)}>Test anlegen</Button>} />

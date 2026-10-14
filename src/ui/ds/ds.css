@@ -116,6 +116,17 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .tab svg { width: 24px; height: 24px; }
 .tab-active { color: var(--primary); }
 
+/* ---------- Account button + stats (home) ---------- */
+.usermenu { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; background: transparent; cursor: pointer; padding: 4px 6px; color: var(--text); }
+.usermenu-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); display: grid; place-items: center; }
+.usermenu-icon-lg { width: 48px; height: 48px; }
+.usermenu-name { font-size: var(--fs-xs); font-weight: 600; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-2); }
+.stat { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-3); border-radius: var(--r-md); background: var(--card); box-shadow: var(--shadow-1); }
+.stat-icon { width: 36px; height: 36px; border-radius: var(--r-sm); background: var(--accent-soft, #fff1e6); color: var(--accent); display: grid; place-items: center; flex: 0 0 auto; }
+.stat-n { font-size: var(--fs-xl); font-weight: 800; line-height: 1; }
+.stat-l { font-size: var(--fs-xs); color: var(--muted); }
+
 /* ---------- Learning exercises (S3) ---------- */
 .choice { display: block; width: 100%; text-align: left; padding: var(--s-3); border: 2px solid var(--line); border-radius: var(--r-md); background: var(--card); font-size: var(--fs-md); cursor: pointer; }
 .choice:disabled { cursor: default; }

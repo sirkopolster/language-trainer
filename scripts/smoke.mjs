@@ -77,6 +77,21 @@ try {
     if (!/deutschen Satz/.test(await t('dir').innerText())) throw new Error('round 2 should start EN → DE');
 
   });
+  await step('mock: 4 items from the format, 1 wrong, result + history', async () => {
+    await page.goto(page.url().split('/lesson/')[0] + '?tab=probetest');
+    await t('mock-start').click();
+    for (let i = 0; i < 4; i++) {
+      await t('prompt').waitFor();
+      const prompt = await t('prompt').innerText();
+      const pr = SENTENCES.find(([de, en]) => de === prompt || en === prompt); const ans = pr[0] === prompt ? pr[1] : pr[0];
+      if (await t('option').count()) await page.getByTestId('option').filter({ hasText: ans }).first().click();
+      else { await t('write').fill(i === 0 ? 'totally wrong' : ans); await t('submit').click(); }
+    }
+    await page.getByText('von 7 Punkten').waitFor();
+    if ((await t('mock-item').count()) !== 4) throw new Error('expected 4 result items');
+    await t('mock-done').click();
+    await page.getByText('Bisherige Probetests').waitFor();
+  });
   if (errors.length) throw new Error('console errors: ' + errors.join(' | '));
   console.log(steps.join('\n'), '\nSMOKE OK', base);
 } catch (e) {

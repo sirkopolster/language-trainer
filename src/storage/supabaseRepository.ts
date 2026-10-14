@@ -89,6 +89,13 @@ export const supabaseRepository: Repository = {
     fail(error);
     return (data as { started_at: string; kind: 'study' | 'mock'; items: unknown[] }[]).map((r) => ({ startedAt: r.started_at, kind: r.kind, items: Array.isArray(r.items) ? r.items.length : 0 }));
   },
+  async listMocks(testId) {
+    const { data, error } = await supabase.from('sessions').select('started_at, score, max_score, items').eq('kind', 'mock').order('started_at', { ascending: false });
+    fail(error);
+    return (data as { started_at: string; score: number; max_score: number; items: { testId?: string; passed?: boolean }[] }[])
+      .filter((r) => Array.isArray(r.items) && r.items[0]?.testId === testId)
+      .map((r) => ({ startedAt: r.started_at, score: Number(r.score), maxScore: Number(r.max_score), passed: !!r.items[0]?.passed }));
+  },
   async listAllSessions() {
     const { data, error } = await supabase.from('sessions').select('profile_id, unit_id, started_at, kind, items');
     fail(error);

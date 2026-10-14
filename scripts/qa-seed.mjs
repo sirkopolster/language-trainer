@@ -18,7 +18,8 @@ export async function qaSeed({ levels = [] } = {}) {
   if (error) throw error;
   const uid = (await sb.auth.getUser()).data.user.id;
   const { data: prof } = await sb.from('profiles').insert({ name: 'QA Kind', user_id: uid }).select().single();
-  const { data: test } = await sb.from('tests').insert({ profile_id: prof.id, name: 'QA Test' }).select().single();
+  const format = { sections: [{ type: 'translate', direction: 'de-en', items: 3, points: 6, label: 'Translate sentences' }, { type: 'choice', direction: 'en', items: 1, points: 1 }], totalPoints: 7, passMark: 5 };
+  const { data: test } = await sb.from('tests').insert({ profile_id: prof.id, name: 'QA Test', format }).select().single();
   const { data: unit } = await sb.from('units').insert({ test_id: test.id, label: 'Unit 1' }).select().single();
   const { data: words } = await sb.from('words').insert(SENTENCES.map(([source, target], i) => ({ unit_id: unit.id, source, target, status: 'active', priority: i === 2 }))).select();
   const past = new Date(Date.now() - 3600_000).toISOString();

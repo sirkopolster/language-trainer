@@ -166,6 +166,12 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .eddie-bubble::before { content: ''; position: absolute; left: -10px; bottom: 10px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 10px solid var(--line); }
 .eddie-bubble::after { content: ''; position: absolute; left: -7px; bottom: 10px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 10px solid var(--card); }
 
+/* ---------- Mock result ---------- */
+.mock-item { padding: var(--s-2) var(--s-3); border-radius: var(--r-md); border-left: 4px solid var(--line); background: var(--bg); }
+.mock-ok { border-left-color: var(--good); }
+.mock-bad { border-left-color: var(--bad); }
+.readiness { display: flex; align-items: center; gap: var(--s-2); }
+
 /* ---------- Colorful icon tiles ---------- */
 .cicon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; flex: 0 0 auto; box-shadow: inset 0 -2px 0 rgba(0,0,0,.08); }
 .cicon svg { width: 22px; height: 22px; }

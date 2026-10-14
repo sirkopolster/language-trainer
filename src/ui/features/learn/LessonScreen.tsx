@@ -112,8 +112,8 @@ export function LessonScreen() {
     <>
       <AppBar title={title} onBack={back} />
       <main className="page page-cols">
-        <div className="col-span"><EddieSays action={<Button small data-testid="lesson-start" onClick={() => startPart(Math.min(progress.nextPart, PARTS.length - 1))}>{progress.nextPart === 0 ? 'Jetzt starten' : progress.nextPart < PARTS.length ? 'Weiter' : 'Nochmal'}</Button>}>In diesem Teil lernst du:</EddieSays></div>
         <div className="stack-sm">
+          <EddieSays>In diesem Teil lernst du:</EddieSays>
           <div className="card">
           <details className="collapse" open={wide || showWords} onToggle={(e) => { if (!wide) setShowWords((e.target as HTMLDetailsElement).open); }}>
             <summary>{wide ? `${lesson.words.length} Sätze` : <>{lesson.words.length} Sätze anzeigen<span className="chev"><Chevron /></span></>}</summary>
@@ -123,6 +123,8 @@ export function LessonScreen() {
           </details>
           </div>
         </div>
+        <div className="stack-sm">
+        <div className="row" style={{ justifyContent: 'flex-end' }}><Button data-testid="lesson-start" onClick={() => startPart(Math.min(progress.nextPart, PARTS.length - 1))}>{progress.nextPart === 0 ? 'Jetzt starten' : progress.nextPart < PARTS.length ? 'Weiter' : 'Nochmal'}</Button></div>
         <Card title="Fahrplan">
           <p className="text-sm muted">Runde antippen zum Starten. Jede Runde fragt alle Sätze in beide Richtungen, leicht beginnend.</p>
           <ol className="plan">
@@ -130,6 +132,7 @@ export function LessonScreen() {
           </ol>
           {progress.crown && <p className="row text-sm" style={{ color: 'var(--accent)' }}><CrownIcon /> Krone: alle Runden perfekt</p>}
         </Card>
+        </div>
         {progress.nextPart > 0 && <Button block variant="ghost" className="col-span" data-testid="lesson-reset" onClick={() => setConfirmReset(true)}>Teil von vorn beginnen</Button>}
       </main>
       <Modal open={confirmReset} title="Von vorn beginnen?" onClose={() => setConfirmReset(false)} actions={<><Button variant="danger" data-testid="lesson-reset-yes" onClick={reset}>Ja, zurücksetzen</Button><Button variant="ghost" onClick={() => setConfirmReset(false)}>Abbrechen</Button></>}>

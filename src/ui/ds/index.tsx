@@ -149,10 +149,11 @@ export function EmptyState({ icon = '✨', title, text, action }: { icon?: React
 }
 
 /* ---------- Shell: AppBar + TabBar ---------- */
-/** onBack makes chevron + title one big back button */
+/** The logo always sits top left (links home). onBack makes chevron + title one big back button. */
 export function AppBar({ title, left, right, onBack }: { title: ReactNode; left?: ReactNode; right?: ReactNode; onBack?: () => void }) {
-  if (onBack) return <header className="appbar"><button type="button" className="appbar-back" aria-label="Zurück" onClick={onBack}><BackIcon /><h1 className="appbar-title">{title}</h1></button>{right}</header>;
-  return <header className="appbar">{left}<h1 className="appbar-title">{title}</h1>{right}</header>;
+  const logo = <a href="/" className="appbar-logo" aria-label="SnapLearn Start"><img src="/logo.svg" alt="" width="32" height="32" /></a>;
+  if (onBack) return <header className="appbar">{logo}<button type="button" className="appbar-back" aria-label="Zurück" onClick={onBack}><BackIcon /><h1 className="appbar-title">{title}</h1></button>{right}</header>;
+  return <header className="appbar">{logo}{left}<h1 className="appbar-title">{title}</h1>{right}</header>;
 }
 export function TabBar({ tabs, active, onSelect }: { tabs: { id: string; label: string; icon: ReactNode }[]; active: string; onSelect: (id: string) => void }) {
   return (

@@ -120,6 +120,8 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .title-edit { display: flex; align-items: center; gap: var(--s-1); min-width: 0; }
 .title-edit .iconbtn { width: 32px; height: 32px; color: var(--muted); }
 .title-input { font: inherit; font-weight: 800; font-size: var(--fs-lg); width: 100%; min-width: 0; border: 0; border-bottom: 2px solid var(--primary); background: transparent; outline: none; padding: 2px 0; }
+.appbar-logo { flex: 0 0 auto; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; }
+.appbar-logo img { border-radius: 8px; display: block; }
 .appbar-back { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--s-1); border: 0; background: transparent; padding: 0; cursor: pointer; color: var(--text); text-align: left; }
 .appbar-back:active { opacity: .7; }
 .iconbtn-lg svg { width: 28px; height: 28px; }

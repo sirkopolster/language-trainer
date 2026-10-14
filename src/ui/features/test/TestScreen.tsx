@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Award, Photo, PhotoKind, Test, Unit, Word } from '../../../domain/types';
-import { PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
+import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
 import { AppBar, BackIcon, BookIcon, Button, CameraIcon, Card, CrownIcon, EmptyState, List, ListItem, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
 import { resizeToJpeg } from '../photos/resize';
 import { PhotoSection, SECTIONS } from './PhotoSection';
@@ -121,7 +121,7 @@ export function TestScreen() {
                     <List>
                       {ls.map((l) => {
                         const p = lessonProgress(lessons.awards, u.id, l.n);
-                        return <ListItem key={l.n} testId={`lesson-${u.id}-${l.n}`} lead={p.crown ? <span style={{ color: 'var(--accent)' }}><CrownIcon /></span> : <span>{l.n}</span>} title={`Lektion ${l.n}`} sub={p.nextPart === 0 ? `${l.words.length} Sätze · noch nicht begonnen` : p.nextPart < PARTS.length ? `Runde ${p.nextPart + 1} von ${PARTS.length}` : `${p.total} von 15 Sternen`} trail={p.total > 0 ? <span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{p.total}</span> : undefined} onClick={() => nav(`/t/${testId}/lesson/${u.id}/${l.n}`)} />;
+                        return <ListItem key={l.n} testId={`lesson-${u.id}-${l.n}`} lead={p.crown ? <span style={{ color: 'var(--accent)' }}><CrownIcon /></span> : <span>{l.n}</span>} title={`Lektion ${l.n}`} sub={p.nextPart === 0 ? `${l.words.length} Sätze · noch nicht begonnen` : p.nextPart < PARTS.length ? `Runde ${p.nextPart + 1} von ${PARTS.length}` : `${p.total} von ${MAX_STARS} Sternen`} trail={p.total > 0 ? <span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{p.total}</span> : undefined} onClick={() => nav(`/t/${testId}/lesson/${u.id}/${l.n}`)} />;
                       })}
                     </List>
                   </Card>

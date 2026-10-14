@@ -65,12 +65,12 @@ try {
     await page.goto(`${base}/t/${seed.testId}`);
     await t(`lesson-${seed.unitId}-1`).click();
     await t('lesson-start').click();
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 16; i++) {
       if (await t('part-next').isVisible().catch(() => false)) break;
       await t('prompt').waitFor();
       const prompt = await t('prompt').innerText();
-      const answer = SENTENCES.find(([de]) => de === prompt)[1];
-      if (i === 0) { await t('hint').click(); await t('hint-yes').click(); }
+      const pr = SENTENCES.find(([de, en]) => de === prompt || en === prompt); const answer = pr[0] === prompt ? pr[1] : pr[0];
+      if (i === 6 && (await t('hint').count())) { await t('hint').click(); await t('hint-yes').click(); }
       await page.getByTestId('option').filter({ hasText: answer }).first().click();
       await page.getByText('Richtig!').waitFor();
       await t('next').click();
@@ -80,6 +80,7 @@ try {
     await t('part-next').click();
     await t('prompt').waitFor();
     if (!(await t('tile').count())) throw new Error('round 2 should be tiles');
+    if ((await t('dir').innerText()) !== 'Englisch → Deutsch') throw new Error('round 2 should start EN → DE');
   });
   if (errors.length) throw new Error('console errors: ' + errors.join(' | '));
   console.log(steps.join('\n'), '\nSMOKE OK', base);

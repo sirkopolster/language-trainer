@@ -12,7 +12,7 @@ export function ExerciseView({ ex, locked, hint, onHint, onAnswer }: { ex: Exerc
       <div className="card card-flat">
         <div className="row-between">
           <div className="grow">
-            <div className="text-sm muted">Auf Englisch:</div>
+            <div className="text-sm muted">{ex.dir === 'en-de' ? 'Auf Deutsch:' : 'Auf Englisch:'}</div>
             <div className="h2" data-testid="prompt">{ex.prompt}</div>
           </div>
           {hint && !locked && <button type="button" className={`iconbtn${shown ? ' iconbtn-on' : ''}`} data-testid="hint" aria-label="Tipp" onClick={() => { if (!shown) setAsking(true); }}><BulbIcon /></button>}
@@ -66,12 +66,12 @@ function GapsView({ ex, locked, onAnswer }: { ex: Gaps; locked: boolean; onAnswe
   );
 }
 
-function WriteView({ locked, onAnswer }: { ex: Write; locked: boolean; onAnswer: (t: string) => void }) {
+function WriteView({ ex, locked, onAnswer }: { ex: Write; locked: boolean; onAnswer: (t: string) => void }) {
   const [text, setText] = useState('');
   const submit = (e: FormEvent) => { e.preventDefault(); if (!locked && text.trim()) onAnswer(text); };
   return (
     <form className="stack" onSubmit={submit}>
-      <textarea data-testid="write" className="input" rows={3} value={text} disabled={locked} placeholder="Ganzen Satz schreiben…" autoCapitalize="sentences" autoComplete="off" onChange={(e) => setText(e.target.value)} />
+      <textarea data-testid="write" className="input" rows={3} value={text} disabled={locked} placeholder="Ganzen Satz schreiben…" lang={ex.dir === 'en-de' ? 'de' : 'en'} autoCapitalize="sentences" autoComplete="off" onChange={(e) => setText(e.target.value)} />
       <Button block data-testid="submit" type="submit" disabled={locked || !text.trim()}>Prüfen</Button>
     </form>
   );

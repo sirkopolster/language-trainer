@@ -1,15 +1,18 @@
 // Lessons (D-012): a unit is split into lessons of 5 sentences; each lesson runs the ladder parts in order. Pure.
 import type { ExerciseType } from './scheduler';
+import type { Direction } from './exercises';
 import type { Award, Word } from './types';
 
 export const LESSON_SIZE = 5;
+/** Four rounds; each round asks the whole lesson first EN → DE (understand), then DE → EN (produce, the test direction). */
 export const PARTS: { type: ExerciseType; label: string; level: number }[] = [
   { type: 'choice', label: 'Wählen', level: 0 },
   { type: 'tiles', label: 'Bauen', level: 1 },
   { type: 'gapsHint', label: 'Lücken', level: 2 },
-  { type: 'gaps', label: 'Lücken ohne Hilfe', level: 3 },
-  { type: 'write', label: 'Schreiben', level: 4 },
+  { type: 'write', label: 'Schreiben', level: 3 },
 ];
+export const HALVES: Direction[] = ['en-de', 'de-en'];
+export const MAX_STARS = PARTS.length * 3;
 
 export interface Lesson { unitId: string; n: number; words: Word[] }
 
@@ -27,7 +30,7 @@ export function splitLessons(words: Word[]): Lesson[] {
   return out;
 }
 
-/** 3 stars = no mistake, 2 = one or two, 1 = more. A hint counts as a mistake for the stars. */
+/** 3 stars = no mistake, 2 = one or two, 1 = more (over both halves of a round). A hint counts as a mistake for the stars. */
 export const starsFor = (mistakes: number) => (mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1);
 
 export const partRef = (n: number, part: ExerciseType) => `lesson:${n}:${part}`;

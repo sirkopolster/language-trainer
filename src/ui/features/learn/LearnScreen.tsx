@@ -4,7 +4,7 @@ import { supabaseRepository as repo } from '../../../storage/supabaseRepository'
 import type { Test, Word, WordState } from '../../../domain/types';
 import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, composeSession, exerciseFor, requeueIndex, type SessionItem } from '../../../domain/scheduler';
-import { makeChoice, makeGaps, makeTiles, makeWrite, type Exercise } from '../../../domain/exercises';
+import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
 import { AppBar, Button, Card, EmptyState, ProgressBar, StarIcon, useToast } from '../../ds';
 import { ExerciseView } from './Exercises';
 
@@ -39,7 +39,8 @@ export function LearnScreen() {
       setPool(active);
       const scope = unitId ? active.filter((w) => w.unitId === unitId) : active;
       const items = composeSession(scope, new Map(states.map((s) => [s.wordId, s])), new Date(), { size, maxNew: 5 });
-      setQueue(items.map((item) => ({ item, ex: build(item, active), retry: false })));
+      // both directions in review too: alternate per item
+      setQueue(items.map((item, i) => ({ item, ex: build(item, active, i % 2 ? 'de-en' : 'en-de'), retry: false })));
     }).catch((e: Error) => toast(e.message, 'bad'));
   }, [testId, unitId, size]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -62,13 +63,13 @@ export function LearnScreen() {
     const rest = queue.slice(1);
     if (feedback.correct) {
       setDone((d) => ({ correct: d.correct + (step.retry ? 0 : 1), total: d.total + (step.retry ? 0 : 1), climbed: d.climbed + (!step.retry && step.item.state.streak === 0 && step.item.state.lastResult ? 1 : 0) }));
-      if (step.retry) rest.splice(requeueIndex(rest.length), 0, { item: step.item, ex: build(step.item, pool), retry: false });
+      if (step.retry) rest.splice(requeueIndex(rest.length), 0, { item: step.item, ex: build(step.item, pool, step.ex.dir), retry: false });
     } else if (!step.retry) {
       setDone((d) => ({ ...d, total: d.total + 1 }));
       // retype once right away, then the item comes back later in the session
-      rest.unshift({ item: step.item, ex: step.ex.type === 'choice' ? makeWrite(step.item.word) : step.ex, retry: true });
+      rest.unshift({ item: step.item, ex: step.ex.type === 'choice' ? makeWrite(step.item.word, step.ex.dir) : step.ex, retry: true });
     } else {
-      rest.splice(requeueIndex(rest.length), 0, { item: step.item, ex: build(step.item, pool), retry: false });
+      rest.splice(requeueIndex(rest.length), 0, { item: step.item, ex: build(step.item, pool, step.ex.dir), retry: false });
     }
     setFeedback(null);
     setQueue(rest);
@@ -100,7 +101,7 @@ export function LearnScreen() {
       <AppBar title={step?.retry ? 'Nochmal tippen' : 'Lernen'} right={<Button small variant="ghost" onClick={() => nav(`/t/${testId}`)}>Abbrechen</Button>} />
       <main className="page stack">
         <ProgressBar value={done.total} max={total} thin />
-        {step && <ExerciseView key={`${step.item.word.id}-${step.retry}-${done.total}`} ex={step.ex} locked={!!feedback} hint={step.item.state.box === 0 && !step.retry && step.ex.type === 'choice'} onAnswer={answer} />}
+        {step && <ExerciseView key={`${step.item.word.id}-${step.retry}-${done.total}`} ex={step.ex} locked={!!feedback} hint={step.item.state.box === 0 && !step.retry && step.ex.type === 'choice' && step.ex.dir === 'de-en'} onAnswer={answer} />}
         {feedback && fb && (
           <Card className={`feedback feedback-${fb.tone}`}>
             <div className="h3" data-testid="feedback">{fb.title}</div>
@@ -113,14 +114,14 @@ export function LearnScreen() {
   );
 }
 
-function build(item: SessionItem, pool: Word[]): Exercise {
+function build(item: SessionItem, pool: Word[], dir: Direction): Exercise {
   const rng = Math.random;
   switch (exerciseFor(item.state.box)) {
-    case 'choice': return makeChoice(item.word, pool, rng);
-    case 'tiles': return makeTiles(item.word, pool, rng);
-    case 'gapsHint': return makeGaps(item.word, true, rng);
-    case 'gaps': return makeGaps(item.word, false, rng);
-    default: return makeWrite(item.word);
+    case 'choice': return makeChoice(item.word, pool, rng, dir);
+    case 'tiles': return makeTiles(item.word, pool, rng, dir);
+    case 'gapsHint': return makeGaps(item.word, true, rng, dir);
+    case 'gaps': return makeGaps(item.word, false, rng, dir);
+    default: return makeWrite(item.word, dir);
   }
 }
 

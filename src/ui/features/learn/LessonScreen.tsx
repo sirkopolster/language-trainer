@@ -4,8 +4,8 @@ import { supabaseRepository as repo } from '../../../storage/supabaseRepository'
 import type { Award, Test, Word, WordState } from '../../../domain/types';
 import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, newState, requeueIndex, shuffle } from '../../../domain/scheduler';
-import { makeChoice, makeGaps, makeTiles, makeWrite, type Exercise } from '../../../domain/exercises';
-import { PARTS, lessonProgress, lessonRef, partRef, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
+import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
+import { HALVES, MAX_STARS, PARTS, lessonProgress, lessonRef, partRef, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
 import { AppBar, BackIcon, Button, Card, CrownIcon, Modal, ProgressBar, StarIcon, useToast } from '../../ds';
 import { ExerciseView } from './Exercises';
 
@@ -15,7 +15,8 @@ const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'wa
   close: { title: 'Fast richtig, kleiner Tippfehler', tone: 'warn' },
   wrong: { title: 'Noch nicht. So ist es richtig:', tone: 'bad' },
 };
-type Step = { word: Word; ex: Exercise; retry: boolean };
+type Step = { word: Word; ex: Exercise; retry: boolean; dir: Direction };
+const DIR_LABEL: Record<Direction, string> = { 'en-de': 'Englisch → Deutsch', 'de-en': 'Deutsch → Englisch' };
 type Phase = { kind: 'plan' } | { kind: 'run'; part: number; queue: Step[]; done: number; mistakes: number; hints: number; feedback: Comparison | null; hintUsed: boolean } | { kind: 'partDone'; part: number; stars: number; mistakes: number; hints: number } | { kind: 'lessonDone'; crown: boolean; total: number };
 
 /** D-012 lesson: 5 sentences through Wählen → Bauen → Lücken → Lücken ohne Hilfe → Schreiben. Plan first, stars per part, crown when all parts are perfect. */
@@ -45,7 +46,8 @@ export function LessonScreen() {
 
   function startPart(part: number) {
     if (!lesson) return;
-    const queue = shuffle(lesson.words, Math.random).map((word) => ({ word, ex: build(word, PARTS[part].type, pool), retry: false }));
+    // first the whole set EN → DE (understand), then the whole set DE → EN (produce)
+    const queue = HALVES.flatMap((dir) => shuffle(lesson.words, Math.random).map((word) => ({ word, ex: build(word, PARTS[part].type, pool, dir), retry: false, dir })));
     setPhase({ kind: 'run', part, queue, done: 0, mistakes: 0, hints: 0, feedback: null, hintUsed: false });
   }
 
@@ -72,9 +74,9 @@ export function LessonScreen() {
     let done = phase.done;
     if (phase.feedback.correct) {
       if (!step.retry) done++;
-      else rest.splice(requeueIndex(rest.length), 0, { word: step.word, ex: build(step.word, PARTS[phase.part].type, pool), retry: false });
-    } else if (!step.retry) rest.unshift({ word: step.word, ex: step.ex.type === 'choice' ? makeWrite(step.word) : step.ex, retry: true });
-    else rest.splice(requeueIndex(rest.length), 0, { word: step.word, ex: build(step.word, PARTS[phase.part].type, pool), retry: false });
+      else rest.splice(requeueIndex(rest.length), 0, { word: step.word, ex: build(step.word, PARTS[phase.part].type, pool, step.dir), retry: false, dir: step.dir });
+    } else if (!step.retry) rest.unshift({ word: step.word, ex: step.ex.type === 'choice' ? makeWrite(step.word, step.dir) : step.ex, retry: true, dir: step.dir });
+    else rest.splice(requeueIndex(rest.length), 0, { word: step.word, ex: build(step.word, PARTS[phase.part].type, pool, step.dir), retry: false, dir: step.dir });
     if (rest.length > 0) { setPhase({ ...phase, queue: rest, done, feedback: null, hintUsed: false }); return; }
     const stars = starsFor(phase.mistakes);
     const star: Award = { id: '', profileId: test.profileId, kind: 'star', refId: unitId, ref: partRef(n, PARTS[phase.part].type), value: stars, awardedAt: new Date().toISOString() };
@@ -110,7 +112,7 @@ export function LessonScreen() {
       <AppBar title={title} left={back} />
       <main className="page stack">
         <Card title="So läuft die Lektion">
-          <p className="text-sm muted">{lesson.words.length} Sätze, fünf Runden. Jede Runde wird ein Stück schwerer.</p>
+          <p className="text-sm muted">{lesson.words.length} Sätze, vier Runden. Jede Runde erst Englisch → Deutsch, dann Deutsch → Englisch, und jede Runde wird ein Stück schwerer.</p>
           <ol className="plan">
             {PARTS.map((p, i) => <li key={p.type} className={i === progress.nextPart ? 'plan-next' : i < progress.nextPart ? 'plan-done' : ''}><span className="plan-n">{i + 1}</span><span className="grow">{p.label}</span><Stars n={progress.stars[p.type]} /></li>)}
           </ol>
@@ -149,7 +151,7 @@ export function LessonScreen() {
       <AppBar title={title} />
       <main className="page stack">
         <Card accent>
-          <div className="result">{phase.crown ? <span className="crown-big"><CrownIcon /></span> : <StarIcon />}<div className="h2">{phase.crown ? 'Krone! Alles perfekt.' : `${phase.total} von 15 Sternen`}</div><p className="text-sm muted">{phase.crown ? 'Diese fünf Sätze sitzen.' : 'Runden mit weniger als drei Sternen kannst du wiederholen.'}</p></div>
+          <div className="result">{phase.crown ? <span className="crown-big"><CrownIcon /></span> : <StarIcon />}<div className="h2">{phase.crown ? 'Krone! Alles perfekt.' : `${phase.total} von ${MAX_STARS} Sternen`}</div><p className="text-sm muted">{phase.crown ? 'Diese fünf Sätze sitzen.' : 'Runden mit weniger als drei Sternen kannst du wiederholen.'}</p></div>
         </Card>
         <Button block onClick={() => nav(`/t/${testId}`)}>Zurück zum Test</Button>
       </main>
@@ -162,8 +164,9 @@ export function LessonScreen() {
     <>
       <AppBar title={`Runde ${phase.part + 1}: ${PARTS[phase.part].label}`} right={<Button small variant="ghost" onClick={() => nav(`/t/${testId}`)}>Abbrechen</Button>} />
       <main className="page stack">
-        <ProgressBar value={phase.done} max={lesson.words.length} thin />
-        <ExerciseView key={`${step.word.id}-${step.retry}-${phase.queue.length}`} ex={step.ex} locked={!!phase.feedback} hint={phase.part === 0 && !step.retry} onHint={() => setPhase({ ...phase, hintUsed: true })} onAnswer={answer} />
+        <ProgressBar value={phase.done} max={lesson.words.length * HALVES.length} thin />
+        <div className="text-sm muted" data-testid="dir">{DIR_LABEL[step.dir]}</div>
+        <ExerciseView key={`${step.word.id}-${step.retry}-${phase.queue.length}`} ex={step.ex} locked={!!phase.feedback} hint={phase.part === 0 && step.dir === 'de-en' && !step.retry} onHint={() => setPhase({ ...phase, hintUsed: true })} onAnswer={answer} />
         {phase.feedback && fb && (
           <Card className={`feedback feedback-${fb.tone}`}>
             <div className="h3" data-testid="feedback">{fb.title}</div>
@@ -180,13 +183,13 @@ function Stars({ n, big }: { n: number | null; big?: boolean }) {
   return <span className={`stars${big ? ' stars-big' : ''}`} aria-label={n === null ? 'offen' : `${n} Sterne`}>{[1, 2, 3].map((i) => <span key={i} className={n !== null && i <= n ? 'star-on' : 'star-off'}><StarIcon /></span>)}</span>;
 }
 
-function build(word: Word, type: (typeof PARTS)[number]['type'], pool: Word[]): Exercise {
+function build(word: Word, type: (typeof PARTS)[number]['type'], pool: Word[], dir: Direction): Exercise {
   const rng = Math.random;
   switch (type) {
-    case 'choice': return makeChoice(word, pool, rng);
-    case 'tiles': return makeTiles(word, pool, rng);
-    case 'gapsHint': return makeGaps(word, true, rng);
-    case 'gaps': return makeGaps(word, false, rng);
-    default: return makeWrite(word);
+    case 'choice': return makeChoice(word, pool, rng, dir);
+    case 'tiles': return makeTiles(word, pool, rng, dir);
+    case 'gapsHint': return makeGaps(word, true, rng, dir);
+    case 'gaps': return makeGaps(word, false, rng, dir);
+    default: return makeWrite(word, dir);
   }
 }

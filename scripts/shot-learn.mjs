@@ -24,15 +24,15 @@ try {
   await t('lesson-start').waitFor(); await shot('plan');
   await t('lesson-start').click();
   const seen = new Set();
-  for (let part = 0; part < 5; part++) {
-    for (let i = 0; i < 12; i++) {
+  for (let part = 0; part < 4; part++) {
+    for (let i = 0; i < 20; i++) {
       if (await t('part-next').isVisible().catch(() => false)) break;
       await t('prompt').waitFor();
       const prompt = await t('prompt').innerText();
-      const ans = SENTENCES.find(([de]) => de === prompt)[1];
+      const pr = SENTENCES.find(([de, en]) => de === prompt || en === prompt); const ans = pr[0] === prompt ? pr[1] : pr[0];
       const type = (await t('option').count()) ? 'choice' : (await t('tile').count()) ? 'tiles' : (await t('gap').count()) ? 'gaps' : 'write';
       const name = type + (type === 'gaps' && (await t('gap').first().inputValue()) ? '-hint' : '');
-      if (type === 'choice' && i === 0) { await t('hint').click(); await shot('choice-hint-ask'); await t('hint-yes').click(); await shot('choice-hint'); }
+      if (type === 'choice' && i === 6 && (await t('hint').count())) { await t('hint').click(); await shot('choice-hint-ask'); await t('hint-yes').click(); await shot('choice-hint'); }
       if (!seen.has(name)) { await shot(name); seen.add(name); }
       if (type === 'choice') await page.getByTestId('option').filter({ hasText: ans }).first().click();
       else if (type === 'tiles') { for (const w of ans.split(' ').flatMap((x) => { const m = x.match(/^(.*?)([.,!?;:]+)$/); return m && m[1] ? [m[1], m[2]] : [x]; })) await page.locator('.tile-bank').getByRole('button', { name: w, exact: true, disabled: false }).first().click(); await t('submit').click(); }
@@ -45,7 +45,7 @@ try {
       await t('next').click();
     }
     await t('part-next').waitFor();
-    if (part === 0 || part === 4) await shot(`part-done-${part + 1}`);
+    if (part === 0 || part === 3) await shot(`part-done-${part + 1}`);
     await t('part-next').click();
   }
   await page.getByText('Zurück zum Test').waitFor(); await shot('lesson-done');

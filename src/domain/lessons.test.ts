@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lessonProgress, partRef, splitLessons, starsFor } from './lessons';
+import { HALVES, PARTS, lessonProgress, partRef, splitLessons, starsFor } from './lessons';
 import type { Award, Word } from './types';
 
 const w = (id: string, unitId = 'u1'): Word => ({ id, unitId, source: id, target: id, example: null, priority: false, status: 'active' });
@@ -23,6 +23,8 @@ describe('stars and progress', () => {
   });
   it('reads part stars, next open part and crown from awards', () => {
     const a = (ref: string, value: number, kind: Award['kind'] = 'star'): Award => ({ id: ref, profileId: 'p', kind, refId: 'u1', ref, value, awardedAt: '' });
+    expect(PARTS.map((p) => p.type)).toEqual(['choice', 'tiles', 'gapsHint', 'write']);
+    expect(HALVES).toEqual(['en-de', 'de-en']);
     const awards = [a(partRef(1, 'choice'), 3), a(partRef(1, 'tiles'), 2), a(partRef(2, 'choice'), 3), a('lesson:2', 1, 'crown')];
     const p = lessonProgress(awards, 'u1', 1);
     expect(p.stars.choice).toBe(3);

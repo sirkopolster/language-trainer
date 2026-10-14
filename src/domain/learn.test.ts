@@ -80,6 +80,17 @@ describe('scheduler', () => {
 
 describe('exercises', () => {
   const pool = [w('a', 'The elephant is big.'), w('b', 'The monkey is small.'), w('c', 'I like the zoo.', 'u2'), w('d', 'We feed the cage.')];
+  it('en-de swaps prompt and answer for every exercise', () => {
+    const c = makeChoice(pool[0], pool, seq(0.3), 'en-de');
+    expect(c.prompt).toBe('The elephant is big.');
+    expect(c.answer).toBe('de a');
+    expect(c.options.every((o) => o.startsWith('de '))).toBe(true);
+    const t = makeTiles(pool[0], pool, seq(0.5), 'en-de');
+    expect(t.tiles).toContain('de');
+    expect(t.answer).toBe('de a');
+    const g = makeGaps(pool[0], true, seq(0.1), 'en-de');
+    expect(g.answer).toBe('de a');
+  });
   it('choice has 4 unique options including the answer', () => {
     const c = makeChoice(pool[0], pool, seq(0.3, 0.7, 0.1));
     expect(c.options).toHaveLength(4);

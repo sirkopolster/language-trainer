@@ -68,12 +68,14 @@ export function TestScreen() {
     <>
       <AppBar title={title} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav('/')}><BackIcon /></button>} />
       <main className="page stack" style={{ paddingBottom: 'calc(var(--s-5) * 3)' }}>
+        {tab === 'einstellungen' && lessons && <EddieSays>{lessons.words.length === 0 ? 'Lade die Vokabelseiten und einen alten Test hoch, dann lese ich alles ein.' : 'Hier kannst du Fotos ergänzen, Themen eintragen und die Sätze prüfen.'}</EddieSays>}
         {tab === 'einstellungen' && test && lessons && <SettingsTab test={test} words={lessons.words} onTestChange={setTest} onWordsChange={load} />}
         {tab === 'lernen' && lessons && (
           allLessons.length === 0 ? (
             <Card flat><EmptyState icon={<GraduationIcon />} title="Noch keine Sätze" text="Lade unter Testinhalt die Vokabelseiten hoch und lass sie auswerten, dann geht es hier los." action={<Button onClick={() => setTab('einstellungen')}>Zum Testinhalt</Button>} /></Card>
           ) : (
             <>
+              <EddieSays>{(() => { const open = allLessons.find((l) => lessonProgress(lessons.awards, l.unitId, l.n).nextPart < PARTS.length); const started = allLessons.some((l) => lessonProgress(lessons.awards, l.unitId, l.n).nextPart > 0); return !started ? 'Such dir Teil 1 aus und leg los!' : learn && learn.due > 0 ? `${learn.due} Sätze warten darauf, wiederholt zu werden.` : open ? `Weiter geht’s mit Teil ${open.n}.` : 'Alle Teile geschafft. Zeit für den Probetest!'; })()}</EddieSays>
               {learn && learn.due > 0 && allLessons.some((l) => lessonProgress(lessons.awards, l.unitId, l.n).nextPart > 0) && (
                 <Card accent>
                   <div className="row"><div className="grow">

@@ -111,7 +111,7 @@ export function LessonScreen() {
     <>
       <AppBar title={title} left={back} />
       <main className="page stack">
-        <Card title={`Die ${lesson.words.length} Sätze`}>
+        <Card title="In dieser Lektion lernst du:">
           <ul className="pairs">
             {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span></li>)}
           </ul>

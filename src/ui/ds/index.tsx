@@ -178,6 +178,15 @@ export const UserIcon = () => svg('M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 01
 export const GearIcon = () => svg('M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z');
 export const ListIcon = () => svg('M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01');
 // Lucide shapes (ISC) for the tab bar
+/** Eddie, the meerkat mascot, talking: picture left, speech bubble right. */
+export function EddieSays({ children, size = 64 }: { children: ReactNode; size?: number }) {
+  return (
+    <div className="eddie">
+      <img src="/eddie.svg" alt="" width={size} height={size} className="eddie-img" />
+      <div className="eddie-bubble">{children}</div>
+    </div>
+  );
+}
 export type IconColor = 'violet' | 'orange' | 'green' | 'blue' | 'pink' | 'yellow';
 /** Colorful gradient tile with a white glyph or initial inside. */
 export function ColorIcon({ color, large, children }: { color: IconColor; large?: boolean; children: ReactNode }) {

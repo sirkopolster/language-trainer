@@ -6,7 +6,7 @@ import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, newState, requeueIndex } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
 import { HALVES, MAX_STARS, PARTS, lessonProgress, lessonRef, partRef, roundOrder, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
-import { AppBar, Button, Card, Chevron, CloseIcon, CrownIcon, Modal, ProgressBar, StarIcon, useMediaQuery, useToast } from '../../ds';
+import { AppBar, Button, Card, Chevron, CloseIcon, CrownIcon, EddieSays, Modal, ProgressBar, StarIcon, useMediaQuery, useToast } from '../../ds';
 import { ExerciseView } from './Exercises';
 
 const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'warn' | 'bad' }> = {
@@ -112,13 +112,16 @@ export function LessonScreen() {
     <>
       <AppBar title={title} onBack={back} />
       <main className="page page-cols">
-        <div className="card">
+        <div className="stack-sm">
+          <EddieSays>In diesem Teil lernst du:</EddieSays>
+          <div className="card">
           <details className="collapse" open={wide || showWords} onToggle={(e) => { if (!wide) setShowWords((e.target as HTMLDetailsElement).open); }}>
-            <summary>In diesem Teil lernst du:{!wide && <span className="chev"><Chevron /></span>}</summary>
+            <summary>{wide ? `${lesson.words.length} Sätze` : <>{lesson.words.length} Sätze anzeigen<span className="chev"><Chevron /></span></>}</summary>
             <ul className="pairs">
               {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span></li>)}
             </ul>
           </details>
+          </div>
         </div>
         <Card title="Fahrplan">
           <p className="text-sm muted">Runde antippen zum Starten. Jede Runde fragt alle Sätze in beide Richtungen, leicht beginnend.</p>

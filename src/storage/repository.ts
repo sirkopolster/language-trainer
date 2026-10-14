@@ -1,8 +1,13 @@
-import type { Award, Photo, PhotoKind, Profile, Role, Test, Unit, Word, WordState } from '../domain/types';
+import type { Account, Award, Photo, PhotoKind, Profile, Role, Test, Unit, Word, WordState } from '../domain/types';
 
 /** Storage boundary. S0: profiles; S1: tests + photos; grows per slice. */
 export interface Repository {
   getRole(): Promise<Role>;
+  /** role + display name (admin: admins.name, student: own profile name) + e-mail */
+  getAccount(): Promise<Account>;
+  updateAdminName(name: string): Promise<void>;
+  /** sign in with e-mail or name via the login function */
+  signIn(identifier: string, password: string): Promise<void>;
   listProfiles(): Promise<Profile[]>;
   listAllAwards(): Promise<Award[]>;
   /** started_at, kind and number of answered items per session (home stats) */

@@ -19,10 +19,18 @@ Deno.serve(async (req) => {
 
     const svc = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const body = await req.json();
+    // names are login names: unique across all profiles and admins, case-insensitive
+    const nameTaken = async (name: string, exceptProfileId?: string) => {
+      const { data: p } = await svc.from('profiles').select('id').ilike('name', name).maybeSingle();
+      if (p && p.id !== exceptProfileId) return true;
+      const { data: a } = await svc.from('admins').select('user_id').ilike('name', name).maybeSingle();
+      return !!a;
+    };
 
     if (body.action === 'create-student') {
       const { name, email, password, profileId } = body;
       if (!name || !email || !password || String(password).length < 8) return json({ error: 'Name, E-Mail und Passwort (mind. 8 Zeichen) nötig' }, 400);
+      if (await nameTaken(String(name).trim(), profileId)) return json({ error: `Der Name „${name}“ ist schon vergeben` }, 400);
       const created = await svc.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { role: 'student', name } });
       if (created.error) return json({ error: created.error.message }, 400);
       const uid = created.data.user.id;
@@ -52,7 +60,7 @@ Deno.serve(async (req) => {
         if (up.error) return json({ error: up.error.message }, 400);
       }
       const pp: Record<string, unknown> = {};
-      if (body.name) pp.name = body.name;
+      if (body.name) { if (await nameTaken(String(body.name).trim(), prof.id)) return json({ error: `Der Name „${body.name}“ ist schon vergeben` }, 400); pp.name = String(body.name).trim(); }
       if (body.email && prof.user_id !== me.user.id) pp.email = body.email;
       if (Object.keys(pp).length) { const up = await svc.from('profiles').update(pp).eq('id', prof.id); if (up.error) throw up.error; }
       return json({ ok: true });

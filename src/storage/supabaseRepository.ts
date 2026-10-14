@@ -38,6 +38,25 @@ export const supabaseRepository: Repository = {
     const { data } = await supabase.from('admins').select('user_id').maybeSingle();
     return data ? 'admin' : 'student';
   },
+  async getAccount() {
+    const { data: u } = await supabase.auth.getUser();
+    const { data: adm } = await supabase.from('admins').select('name').maybeSingle();
+    if (adm) return { role: 'admin', name: adm.name, email: u.user?.email ?? '' };
+    const { data: p } = await supabase.from('profiles').select('name').eq('user_id', u.user?.id ?? '').maybeSingle();
+    return { role: 'student', name: p?.name ?? '', email: u.user?.email ?? '' };
+  },
+  async updateAdminName(name) {
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase.from('admins').update({ name }).eq('user_id', u.user?.id ?? '');
+    if (error) throw new Error(/unique|duplicate/i.test(error.message) ? `Der Name „${name}“ ist schon vergeben` : error.message);
+  },
+  async signIn(identifier, password) {
+    const { data, error } = await supabase.functions.invoke('login', { body: { identifier, password } });
+    if (error) { const b = await (error as { context?: Response }).context?.json?.().catch(() => null); throw new Error(b?.error ?? 'Anmeldung fehlgeschlagen'); }
+    if (data?.error) throw new Error(data.error);
+    const { error: se } = await supabase.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+    fail(se);
+  },
   async listProfiles() {
     const { data: u } = await supabase.auth.getUser();
     const { data, error } = await supabase.from('profiles').select('*').order('created_at');
@@ -47,7 +66,7 @@ export const supabaseRepository: Repository = {
   async addProfile(name) {
     const { data: u } = await supabase.auth.getUser();
     const { data, error } = await supabase.from('profiles').insert({ name, user_id: u.user?.id }).select().single();
-    fail(error);
+    if (error) throw new Error(/unique|duplicate/i.test(error.message) ? `Der Name „${name}“ ist schon vergeben, nimm einen anderen` : error.message);
     return toProfile(data as ProfileRow, u.user?.id ?? '');
   },
   async listAllAwards() {

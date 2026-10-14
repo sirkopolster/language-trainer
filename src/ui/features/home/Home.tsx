@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
-import { supabase } from '../../../storage/supabaseRepository';
 import { computeStats, type SessionSummary } from '../../../domain/stats';
 import { UserMenu } from '../account/UserMenu';
 import type { Award, Profile, Test } from '../../../domain/types';
@@ -31,8 +30,8 @@ export function Home() {
     setRole(r); setProfiles(p); setTests(t); setAwards(a);
     const own = p.find((x) => x.own);
     if (own) setSessions(await repo.listSessions(own.id));
-    const { data } = await supabase.auth.getUser();
-    setAccountName(own?.name ?? (r === 'admin' ? 'Eltern' : data.user?.email?.split('@')[0] ?? ''));
+    const acc = await repo.getAccount();
+    setAccountName(acc.name || own?.name || acc.email.split('@')[0]);
   }).catch((e: Error) => toast(e.message, 'bad'));
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -65,7 +64,7 @@ export function Home() {
 
   return (
     <>
-      <AppBar title="SnapLearn" right={<UserMenu name={accountName} />} />
+      <AppBar title="SnapLearn" right={<UserMenu name={accountName} role={role} onNameChange={load} />} />
       <main className="page stack">
         {profiles === null || role === null ? <p className="muted text-sm">Lädt…</p> : role === 'student' ? (
           !me ? (
@@ -87,7 +86,7 @@ export function Home() {
           )
         ) : (
           <>
-            <p className="h2" style={{ margin: 0 }}>Hallo, schön, dass du wieder da bist.</p>
+            <p className="h2" style={{ margin: 0 }}>Hallo {accountName}, schön, dass du wieder da bist.</p>
             <div className="row-between">
               <h2 className="h2">Kinder</h2>
               <Button small data-testid="kid-add" onClick={() => setKid({ name: '', email: '', password: '' })}>Neues Kind</Button>

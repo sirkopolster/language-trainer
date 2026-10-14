@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { supabase } from '../../../storage/supabaseRepository';
+import { supabase, supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import { Button, Card, Input } from '../../ds';
 
 /** Parent login. Registration via sign-up with the same form (toggle), no password reset in v1 (built-in mailer, same as Trainer-App D-044). */
@@ -14,9 +14,13 @@ export function Login() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true); setError(null); setInfo(null);
-    const res = mode === 'login' ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password });
-    if (res.error) setError(/invalid/i.test(res.error.message) ? 'E-Mail oder Passwort stimmt nicht.' : /fetch|network/i.test(res.error.message) ? 'Keine Verbindung.' : res.error.message);
-    else if (mode === 'signup' && !res.data.session) setInfo('Fast geschafft: bitte den Link in der E-Mail bestätigen.');
+    if (mode === 'login') {
+      await repo.signIn(email, password).catch((e: Error) => setError(/fetch|network/i.test(e.message) ? 'Keine Verbindung.' : e.message));
+    } else {
+      const res = await supabase.auth.signUp({ email, password });
+      if (res.error) setError(/fetch|network/i.test(res.error.message) ? 'Keine Verbindung.' : res.error.message);
+      else if (!res.data.session) setInfo('Fast geschafft: bitte den Link in der E-Mail bestätigen.');
+    }
     setBusy(false);
   }
 
@@ -28,7 +32,7 @@ export function Login() {
       </div>
       <Card>
         <form className="stack" onSubmit={submit}>
-          <Input data-testid="login-email" label="E-Mail" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input data-testid="login-email" label={mode === 'login' ? 'Name oder E-Mail' : 'E-Mail'} type={mode === 'login' ? 'text' : 'email'} autoCapitalize="none" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input data-testid="login-password" label="Passwort" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} error={error ?? undefined} hint={mode === 'signup' ? 'Mindestens 8 Zeichen.' : undefined} />
           {info && <p className="text-sm" style={{ color: 'var(--good)' }}>{info}</p>}
           <Button data-testid="login-submit" type="submit" block disabled={busy}>{mode === 'login' ? 'Anmelden' : 'Konto anlegen'}</Button>

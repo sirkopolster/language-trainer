@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Award, Photo, PhotoKind, Test, Unit, Word } from '../../../domain/types';
 import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
-import { AppBar, BackIcon, BookIcon, Button, CameraIcon, Card, CrownIcon, EmptyState, List, ListItem, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, BookIcon, Button, CameraIcon, Card, CrownIcon, EmptyState, List, ListItem, Modal, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
 import { resizeToJpeg } from '../photos/resize';
 import { PhotoSection, SECTIONS } from './PhotoSection';
 
@@ -25,6 +25,7 @@ export function TestScreen() {
   const [reviewCount, setReviewCount] = useState(0);
   const [learn, setLearn] = useState<{ active: number; due: number } | null>(null);
   const [lessons, setLessons] = useState<{ units: Unit[]; words: Word[]; awards: Award[] } | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const load = () => Promise.all([repo.listPhotos(testId), repo.listWords(testId), repo.listWordStates(testId), repo.listUnits(testId)]).then(async ([p, w, st, units]) => {
     setPhotos(p); setReviewCount(w.filter((x) => x.status === 'review').length);
@@ -79,6 +80,16 @@ export function TestScreen() {
     catch (e) { toast((e as Error).message, 'bad'); }
   }
 
+  async function resetAll() {
+    if (!test || !lessons) return;
+    try {
+      await repo.resetTestProgress(test.profileId, lessons.units.map((u) => u.id), lessons.words.map((w) => w.id));
+      toast('Lernfortschritt gelöscht', 'good');
+      load();
+    } catch (e) { toast((e as Error).message, 'bad'); }
+    setConfirmReset(false);
+  }
+
   const vocab = photos.filter((p) => p.kind === 'vocab').length;
   const sample = photos.filter((p) => p.kind === 'test').length;
   const allLessons = lessons ? splitLessons(lessons.words) : [];
@@ -127,6 +138,7 @@ export function TestScreen() {
                   </Card>
                 );
               })}
+              {lessons.awards.length > 0 && <Button block variant="ghost" data-testid="reset-all" onClick={() => setConfirmReset(true)}>Gesamten Lernfortschritt löschen</Button>}
             </>
           )
         )}
@@ -147,6 +159,9 @@ export function TestScreen() {
         )}
       </main>
       {tab && <TabBar tabs={TABS} active={tab} onSelect={setTab} />}
+      <Modal open={confirmReset} title="Alles zurücksetzen?" onClose={() => setConfirmReset(false)} actions={<><Button variant="danger" data-testid="reset-all-yes" onClick={resetAll}>Ja, alles löschen</Button><Button variant="ghost" onClick={() => setConfirmReset(false)}>Abbrechen</Button></>}>
+        <p className="text-sm muted">Alle Sterne, Kronen und Lernstände dieses Tests werden gelöscht. Die Sätze und Fotos bleiben.</p>
+      </Modal>
     </>
   );
 }

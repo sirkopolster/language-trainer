@@ -165,6 +165,11 @@ export const supabaseRepository: Repository = {
     const s = await supabase.from('word_state').delete().in('word_id', wordIds);
     fail(s.error);
   },
+  async resetTestProgress(profileId, unitIds, wordIds) {
+    if (unitIds.length) { const a = await supabase.from('awards').delete().eq('profile_id', profileId).in('ref_id', unitIds); fail(a.error); }
+    if (wordIds.length) { const s = await supabase.from('word_state').delete().in('word_id', wordIds); fail(s.error); }
+    if (unitIds.length) { const se = await supabase.from('sessions').delete().eq('profile_id', profileId).in('unit_id', unitIds); fail(se.error); }
+  },
   async saveWordState(s) {
     const { error } = await supabase.from('word_state').upsert({ word_id: s.wordId, box: s.box, due_at: s.dueAt, streak: s.streak, lapses: s.lapses, last_result: s.lastResult, updated_at: new Date().toISOString() });
     fail(error);

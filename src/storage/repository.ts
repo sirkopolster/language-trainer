@@ -32,6 +32,8 @@ export interface Repository {
   saveAward(a: Award): Promise<void>;
   /** lesson reset: removes its stars/crown and the ladder state of its sentences */
   resetLesson(profileId: string, unitId: string, n: number, wordIds: string[]): Promise<void>;
+  /** whole test: stars, crowns, ladder state and study sessions of its units */
+  resetTestProgress(profileId: string, unitIds: string[], wordIds: string[]): Promise<void>;
   saveWordState(s: WordState): Promise<void>;
   addSession(s: { profileId: string; kind: 'study' | 'mock'; unitId: string | null; startedAt: string; items: unknown[]; score?: number; maxScore?: number }): Promise<void>;
   /** everything the user owns, for the JSON backup (blueprint §7) */

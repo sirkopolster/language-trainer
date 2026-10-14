@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="30 30 100 100">
   <!-- Eddie, the SnapLearn meerkat, without background: head, shoulders, little paws -->
-  <path d="M42 130v-20c0-30 18-50 38-50s38 20 38 50v20z" fill="#fff3e3"/>
-  <circle cx="80" cy="76" r="38" fill="#fff3e3"/>
-  <circle cx="44" cy="70" r="9" fill="#fde3c4"/><circle cx="116" cy="70" r="9" fill="#fde3c4"/>
+  <path d="M42 130v-20c0-30 18-50 38-50s38 20 38 50v20z" fill="#f7dcb8" stroke="#d9a470" stroke-width="2.5"/>
+  <circle cx="80" cy="76" r="38" fill="#fbe6c8" stroke="#d9a470" stroke-width="2.5"/>
+  <circle cx="44" cy="70" r="9" fill="#f1cfa3" stroke="#d9a470" stroke-width="2"/><circle cx="116" cy="70" r="9" fill="#f1cfa3" stroke="#d9a470" stroke-width="2"/>
   <ellipse cx="64" cy="74" rx="11" ry="13" fill="#3b2a22"/><ellipse cx="96" cy="74" rx="11" ry="13" fill="#3b2a22"/>
   <circle cx="66" cy="72" r="5" fill="#fff"/><circle cx="98" cy="72" r="5" fill="#fff"/>
   <circle cx="67.5" cy="73.5" r="2.4" fill="#1c1c28"/><circle cx="99.5" cy="73.5" r="2.4" fill="#1c1c28"/>
-  <ellipse cx="80" cy="94" rx="13" ry="9" fill="#fde3c4"/><ellipse cx="80" cy="91" rx="5.5" ry="4" fill="#3b2a22"/>
+  <ellipse cx="80" cy="94" rx="13" ry="9" fill="#f1cfa3"/><ellipse cx="80" cy="91" rx="5.5" ry="4" fill="#3b2a22"/>
   <path d="M73 100q7 5 14 0" stroke="#3b2a22" stroke-width="2.4" stroke-linecap="round" fill="none"/>
-  <g fill="#fde3c4" stroke="#e9b98a" stroke-width="2">
+  <g fill="#f1cfa3" stroke="#d9a470" stroke-width="2.5">
     <path d="M46 130v-12a9 9 0 0118 0v12z"/><path d="M96 130v-12a9 9 0 0118 0v12z"/>
   </g>
-  <g fill="#e9b98a">
+  <g fill="#c98f5c">
     <circle cx="50" cy="119" r="2"/><circle cx="55" cy="117" r="2"/><circle cx="60" cy="119" r="2"/>
     <circle cx="100" cy="119" r="2"/><circle cx="105" cy="117" r="2"/><circle cx="110" cy="119" r="2"/>
   </g>

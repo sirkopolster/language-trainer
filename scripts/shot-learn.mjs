@@ -21,8 +21,8 @@ try {
   await page.goto(`${base}/t/${seed.testId}`);
   await t(`lesson-${seed.unitId}-1`).waitFor(); await shot('test-screen');
   await t(`lesson-${seed.unitId}-1`).click();
-  await t('lesson-start').waitFor(); await shot('plan');
-  await t('lesson-start').click();
+  await t('plan-0').waitFor(); await shot('plan');
+  await t('plan-0').click();
   const seen = new Set();
   for (let part = 0; part < 4; part++) {
     for (let i = 0; i < 20; i++) {

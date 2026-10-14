@@ -116,16 +116,13 @@ export function LessonScreen() {
             {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span></li>)}
           </ul>
         </Card>
-        <Card title="So läuft die Lektion">
-          <p className="text-sm muted">Vier Runden, jede erst Englisch → Deutsch, dann Deutsch → Englisch. Jede Runde wird ein Stück schwerer.</p>
+        <Card title="Lektionsfahrplan">
+          <p className="text-sm muted">Runde antippen zum Starten. Jede Runde erst Englisch → Deutsch, dann Deutsch → Englisch.</p>
           <ol className="plan">
-            {PARTS.map((p, i) => <li key={p.type} className={i === progress.nextPart ? 'plan-next' : i < progress.nextPart ? 'plan-done' : ''}><span className="plan-n">{i + 1}</span><span className="grow">{p.label}</span><Stars n={progress.stars[p.type]} /></li>)}
+            {PARTS.map((p, i) => <li key={p.type}><button type="button" data-testid={`plan-${i}`} className={`plan-item${i === progress.nextPart ? ' plan-next' : i < progress.nextPart ? ' plan-done' : ''}`} onClick={() => startPart(i)}><span className="plan-n">{i + 1}</span><span className="grow">{p.label}</span><Stars n={progress.stars[p.type]} /></button></li>)}
           </ol>
           {progress.crown && <p className="row text-sm" style={{ color: 'var(--accent)' }}><CrownIcon /> Krone: alle Runden perfekt</p>}
         </Card>
-        {progress.nextPart < PARTS.length
-          ? <Button block data-testid="lesson-start" onClick={() => startPart(progress.nextPart)}>{progress.nextPart === 0 ? 'Los geht’s' : `Weiter mit Runde ${progress.nextPart + 1}`}</Button>
-          : <Button block data-testid="lesson-start" variant="secondary" onClick={() => startPart(PARTS.length - 1)}>Schreiben nochmal üben</Button>}
         {progress.nextPart > 0 && <Button block variant="ghost" data-testid="lesson-reset" onClick={() => setConfirmReset(true)}>Lektion von vorn beginnen</Button>}
       </main>
       <Modal open={confirmReset} title="Von vorn beginnen?" onClose={() => setConfirmReset(false)} actions={<><Button variant="danger" data-testid="lesson-reset-yes" onClick={reset}>Ja, zurücksetzen</Button><Button variant="ghost" onClick={() => setConfirmReset(false)}>Abbrechen</Button></>}>

@@ -64,7 +64,7 @@ try {
     const seed = await qaSeed();
     await page.goto(`${base}/t/${seed.testId}`);
     await t(`lesson-${seed.unitId}-1`).click();
-    await t('lesson-start').click();
+    await t('plan-0').click();
     for (let i = 0; i < 16; i++) {
       if (await t('part-next').isVisible().catch(() => false)) break;
       await t('prompt').waitFor();

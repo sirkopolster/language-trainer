@@ -58,12 +58,13 @@ try {
     await page.goto(`${base}/t/${seed.testId}`);
     await t(`lesson-${seed.unitId}-1`).click();
     await t('plan-0').click();
+    let hinted = false;
     for (let i = 0; i < 16; i++) {
       if (await t('part-next').isVisible().catch(() => false)) break;
       await t('prompt').waitFor();
       const prompt = await t('prompt').innerText();
       const pr = SENTENCES.find(([de, en]) => de === prompt || en === prompt); const answer = pr[0] === prompt ? pr[1] : pr[0];
-      if (i === 6 && (await t('hint').count())) { await t('hint').click(); await t('hint-yes').click(); }
+      if (!hinted && (await t('hint').count())) { await t('hint').click(); await t('hint-yes').click(); hinted = true; }
       await page.getByTestId('option').filter({ hasText: answer }).first().click();
       await page.getByText('Richtig!').waitFor();
       await t('next').click();

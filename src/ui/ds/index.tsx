@@ -107,6 +107,18 @@ export function Modal({ open, title, onClose, children, actions }: { open: boole
 type Toast = { id: number; text: string; tone?: 'good' | 'bad' };
 const ToastCtx = createContext<(text: string, tone?: Toast['tone'], ms?: number) => void>(() => undefined);
 export const useToast = () => useContext(ToastCtx);
+
+/** true when the viewport matches, e.g. useMediaQuery('(min-width: 768px)') for tablet and up */
+export function useMediaQuery(q: string) {
+  const [m, setM] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(q);
+    const on = () => setM(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [q]);
+  return m;
+}
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const show = useCallback((text: string, tone?: Toast['tone'], ms = 2600) => {

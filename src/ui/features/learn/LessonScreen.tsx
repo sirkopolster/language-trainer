@@ -6,7 +6,7 @@ import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, newState, requeueIndex } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
 import { HALVES, MAX_STARS, PARTS, lessonProgress, lessonRef, partRef, roundOrder, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
-import { AppBar, BackIcon, Button, Card, CrownIcon, Modal, ProgressBar, StarIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, Button, Card, Chevron, CrownIcon, Modal, ProgressBar, StarIcon, useMediaQuery, useToast } from '../../ds';
 import { ExerciseView } from './Exercises';
 
 const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'warn' | 'bad' }> = {
@@ -33,6 +33,8 @@ export function LessonScreen() {
   const [phase, setPhase] = useState<Phase>({ kind: 'plan' });
   const [log, setLog] = useState<unknown[]>([]);
   const [confirmReset, setConfirmReset] = useState(false);
+  const wide = useMediaQuery('(min-width: 768px)');
+  const [showWords, setShowWords] = useState(false);
 
   useEffect(() => {
     repo.getTest(testId).then(async (t) => {
@@ -110,12 +112,15 @@ export function LessonScreen() {
   if (phase.kind === 'plan') return (
     <>
       <AppBar title={title} left={back} />
-      <main className="page stack">
-        <Card title="In diesem Teil lernst du:">
-          <ul className="pairs">
-            {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span></li>)}
-          </ul>
-        </Card>
+      <main className="page page-cols">
+        <div className="card">
+          <details className="collapse" open={wide || showWords} onToggle={(e) => { if (!wide) setShowWords((e.target as HTMLDetailsElement).open); }}>
+            <summary>In diesem Teil lernst du:{!wide && <span className="chev"><Chevron /></span>}</summary>
+            <ul className="pairs">
+              {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span></li>)}
+            </ul>
+          </details>
+        </div>
         <Card title="Fahrplan">
           <p className="text-sm muted">Runde antippen zum Starten. Jede Runde fragt alle Sätze in beide Richtungen, leicht beginnend.</p>
           <ol className="plan">
@@ -123,7 +128,7 @@ export function LessonScreen() {
           </ol>
           {progress.crown && <p className="row text-sm" style={{ color: 'var(--accent)' }}><CrownIcon /> Krone: alle Runden perfekt</p>}
         </Card>
-        {progress.nextPart > 0 && <Button block variant="ghost" data-testid="lesson-reset" onClick={() => setConfirmReset(true)}>Teil von vorn beginnen</Button>}
+        {progress.nextPart > 0 && <Button block variant="ghost" className="col-span" data-testid="lesson-reset" onClick={() => setConfirmReset(true)}>Teil von vorn beginnen</Button>}
       </main>
       <Modal open={confirmReset} title="Von vorn beginnen?" onClose={() => setConfirmReset(false)} actions={<><Button variant="danger" data-testid="lesson-reset-yes" onClick={reset}>Ja, zurücksetzen</Button><Button variant="ghost" onClick={() => setConfirmReset(false)}>Abbrechen</Button></>}>
         <p className="text-sm muted">Sterne und Krone dieses Teils werden gelöscht, die Sätze starten wieder bei Runde 1.</p>

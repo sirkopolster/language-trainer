@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Photo, PhotoKind, Test, Word } from '../../../domain/types';
 import { suggestTopics } from '../../../domain/topics';
-import { Button, Card, ListIcon, useToast } from '../../ds';
+import { Button, Card, Input, ListIcon, useToast } from '../../ds';
 import { resizeToJpeg } from '../photos/resize';
 import { PhotoSection, SECTIONS } from './PhotoSection';
 
@@ -77,6 +77,9 @@ export function SettingsTab({ test, words, onTestChange, onWordsChange }: { test
 
   return (
     <>
+      <Card>
+        <Input label="Wann ist der Test?" type="date" value={test.testDate ?? ''} onChange={(e) => { const d = e.target.value || null; repo.updateTest(test.id, { testDate: d }).then(() => { onTestChange({ ...test, testDate: d }); toast('Testdatum gespeichert', 'good', 1500); }).catch((err: Error) => toast(err.message, 'bad')); }} />
+      </Card>
       <h2 className="h2">Schritt 1: Testinhalte hochladen</h2>
       {SECTIONS.map((s) => (
         <PhotoSection key={s.kind} {...s} photos={photos.filter((p) => p.kind === s.kind)} urls={urls} busy={pending.kind === s.kind ? pending.n : 0} extracting={extracting} onFiles={(f) => upload(s.kind, f)} onRemove={remove} onExtract={() => extract(s.kind)} />

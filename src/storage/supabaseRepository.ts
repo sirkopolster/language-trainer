@@ -74,6 +74,16 @@ export const supabaseRepository: Repository = {
     fail(error);
     return (data as AwardRow[]).map(toAward);
   },
+  async listAllUnits() {
+    const { data, error } = await supabase.from('units').select('*');
+    fail(error);
+    return (data as UnitRow[]).map(toUnit);
+  },
+  async listAllWords() {
+    const { data, error } = await supabase.from('words').select('*');
+    fail(error);
+    return (data as WordRow[]).map(toWord);
+  },
   async listSessions(profileId) {
     const { data, error } = await supabase.from('sessions').select('started_at, kind, items').eq('profile_id', profileId);
     fail(error);

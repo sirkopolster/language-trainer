@@ -10,6 +10,8 @@ export interface Repository {
   signIn(identifier: string, password: string): Promise<void>;
   listProfiles(): Promise<Profile[]>;
   listAllAwards(): Promise<Award[]>;
+  listAllUnits(): Promise<Unit[]>;
+  listAllWords(): Promise<Word[]>;
   /** started_at, kind and number of answered items per session (home stats) */
   listSessions(profileId: string): Promise<{ startedAt: string; kind: 'study' | 'mock'; items: number }[]>;
   adminCreateStudent(s: { name: string; email: string; password: string; profileId?: string }): Promise<void>;

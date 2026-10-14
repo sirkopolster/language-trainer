@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import { computeStats, type SessionSummary } from '../../../domain/stats';
 import { UserMenu } from '../account/UserMenu';
-import type { Award, Profile, Test } from '../../../domain/types';
+import type { Award, Profile, Test, Unit, Word } from '../../../domain/types';
+import { TestCard, testProgress } from '../test/TestCard';
 import { AppBar, Button, Card, ColorIcon, CrownIcon, EmptyState, FlameIcon, Input, List, ListItem, Modal, StarIcon, TestIcon, UserIcon, ClipboardCheckIcon, GraduationIcon, useToast } from '../../ds';
-import { NewTestModal, testSub } from '../test/NewTestModal';
+import { NewTestModal } from '../test/NewTestModal';
 
 /**
  * Home (D-015). Student: "Aktuelle Tests" of the own profile, nothing else. Admin (parent): the children with progress,
@@ -18,6 +19,8 @@ export function Home() {
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [tests, setTests] = useState<Test[]>([]);
   const [awards, setAwards] = useState<Award[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [words, setWords] = useState<Word[]>([]);
   const [newTest, setNewTest] = useState(false);
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState('');
@@ -26,8 +29,8 @@ export function Home() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [accountName, setAccountName] = useState('');
 
-  const load = () => Promise.all([repo.getRole(), repo.listProfiles(), repo.listAllTests(), repo.listAllAwards()]).then(async ([r, p, t, a]) => {
-    setRole(r); setProfiles(p); setTests(t); setAwards(a);
+  const load = () => Promise.all([repo.getRole(), repo.listProfiles(), repo.listAllTests(), repo.listAllAwards(), repo.listAllUnits(), repo.listAllWords()]).then(async ([r, p, t, a, u, w]) => {
+    setRole(r); setProfiles(p); setTests(t); setAwards(a); setUnits(u); setWords(w);
     const own = p.find((x) => x.own);
     if (own) setSessions(await repo.listSessions(own.id));
     const acc = await repo.getAccount();
@@ -64,7 +67,7 @@ export function Home() {
 
   return (
     <>
-      <AppBar title="SnapLearn" right={<UserMenu name={accountName} role={role} onNameChange={load} />} />
+      <AppBar title="SnapLearn" right={<span className="row">{me && <Button small data-testid="test-add" onClick={() => setNewTest(true)}>Neuer Test</Button>}<UserMenu name={accountName} role={role} onNameChange={load} /></span>} />
       <main className="page stack">
         {profiles === null || role === null ? <p className="muted text-sm">Lädt…</p> : role === 'student' ? (
           !me ? (
@@ -73,14 +76,11 @@ export function Home() {
             <>
               <h1 className="hello">Hi <span className="hello-name">{me.name}</span>, schön, dass du da bist</h1>
               <Stats sessions={sessions} awards={awards.filter((a) => a.profileId === me.id)} />
-              <div className="row-between">
-                <h2 className="h2">Aktuelle Tests</h2>
-                {tests.length > 0 && <Button small data-testid="test-add" onClick={() => setNewTest(true)}>Neuer Test</Button>}
-              </div>
+              <h2 className="h2">Aktuelle Tests</h2>
               {tests.length === 0 ? (
-                <Card flat><EmptyState icon={<TestIcon />} title="Welcher Test steht an?" text="Lege den nächsten Vokabeltest an und fotografiere danach die Vokabelseiten." action={<Button data-testid="test-add" onClick={() => setNewTest(true)}>Neuen Test anlegen</Button>} /></Card>
+                <Card flat><EmptyState icon={<TestIcon />} title="Welcher Test steht an?" text="Lege den nächsten Vokabeltest an und fotografiere danach die Vokabelseiten." action={<Button data-testid="test-add-empty" onClick={() => setNewTest(true)}>Neuen Test anlegen</Button>} /></Card>
               ) : (
-                <List>{tests.map((t) => <ListItem key={t.id} testId={`test-${t.id}`} lead={<ColorIcon color="violet"><ClipboardCheckIcon /></ColorIcon>} title={t.name} sub={testSub(t)} onClick={() => nav(`/t/${t.id}`)} />)}</List>
+                <div className="stack-sm">{tests.map((t) => <TestCard key={t.id} test={t} progress={testProgress(t, units, words, awards)} onClick={() => nav(`/t/${t.id}`)} />)}</div>
               )}
             </>
           )
@@ -104,7 +104,7 @@ export function Home() {
             {tests.length > 0 && (
               <>
                 <h2 className="h2">Aktuelle Tests</h2>
-                <List>{tests.map((t) => <ListItem key={t.id} testId={`test-${t.id}`} lead={<ColorIcon color="violet"><ClipboardCheckIcon /></ColorIcon>} title={t.name} sub={testSub(t, profiles.find((p) => p.id === t.profileId)?.name)} onClick={() => nav(`/t/${t.id}`)} />)}</List>
+                <div className="stack-sm">{tests.map((t) => <TestCard key={t.id} test={t} sub={profiles.find((p) => p.id === t.profileId)?.name} progress={testProgress(t, units, words, awards)} onClick={() => nav(`/t/${t.id}`)} />)}</div>
               </>
             )}
             <Button variant="ghost" block onClick={backup}>Backup (JSON) herunterladen</Button>

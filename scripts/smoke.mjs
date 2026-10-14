@@ -50,7 +50,7 @@ try {
   });
   await step('home lists the test', async () => {
     await page.goto(base + '/');
-    await page.locator('.item-title', { hasText: 'QA Test' }).waitFor();
+    await page.locator('.testcard-name', { hasText: 'QA Test' }).waitFor();
   });
   await step('lesson: plan, round 1 with one hint, stars', async () => {
     await qaCleanup();

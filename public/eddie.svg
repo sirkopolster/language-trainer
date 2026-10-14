@@ -2,8 +2,8 @@
   <!-- Eddie = exactly the figure from logo.svg, without the orange tile, with one outline around the silhouette -->
   <defs>
     <filter id="outline" x="-10%" y="-10%" width="120%" height="120%">
-      <feMorphology in="SourceAlpha" operator="dilate" radius="2.5" result="d"/>
-      <feFlood flood-color="#d9a470"/>
+      <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="d"/>
+      <feFlood flood-color="#3b2a22"/>
       <feComposite in2="d" operator="in"/>
     </filter>
     <clipPath id="c"><rect x="8" y="8" width="144" height="144" rx="36"/></clipPath>

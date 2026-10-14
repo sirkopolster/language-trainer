@@ -183,7 +183,7 @@ export const ListIcon = () => svg('M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18
 export function EddieSays({ children, size = 64 }: { children: ReactNode; size?: number }) {
   return (
     <div className="eddie">
-      <img src="/eddie.svg" alt="" width={size} height={size} className="eddie-img" />
+      <img src="/eddie.svg" alt="" height={size} className="eddie-img" />
       <div className="eddie-bubble">{children}</div>
     </div>
   );

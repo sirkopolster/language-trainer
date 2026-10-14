@@ -111,14 +111,18 @@ export function LessonScreen() {
     <>
       <AppBar title={title} left={back} />
       <main className="page stack">
+        <Card title={`Die ${lesson.words.length} Sätze`}>
+          <ul className="pairs">
+            {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span></li>)}
+          </ul>
+        </Card>
         <Card title="So läuft die Lektion">
-          <p className="text-sm muted">{lesson.words.length} Sätze, vier Runden. Jede Runde erst Englisch → Deutsch, dann Deutsch → Englisch, und jede Runde wird ein Stück schwerer.</p>
+          <p className="text-sm muted">Vier Runden, jede erst Englisch → Deutsch, dann Deutsch → Englisch. Jede Runde wird ein Stück schwerer.</p>
           <ol className="plan">
             {PARTS.map((p, i) => <li key={p.type} className={i === progress.nextPart ? 'plan-next' : i < progress.nextPart ? 'plan-done' : ''}><span className="plan-n">{i + 1}</span><span className="grow">{p.label}</span><Stars n={progress.stars[p.type]} /></li>)}
           </ol>
           {progress.crown && <p className="row text-sm" style={{ color: 'var(--accent)' }}><CrownIcon /> Krone: alle Runden perfekt</p>}
         </Card>
-        <Card flat><ul className="plan-words">{lesson.words.map((w) => <li key={w.id}>{w.source}</li>)}</ul></Card>
         {progress.nextPart < PARTS.length
           ? <Button block data-testid="lesson-start" onClick={() => startPart(progress.nextPart)}>{progress.nextPart === 0 ? 'Los geht’s' : `Weiter mit Runde ${progress.nextPart + 1}`}</Button>
           : <Button block data-testid="lesson-start" variant="secondary" onClick={() => startPart(PARTS.length - 1)}>Schreiben nochmal üben</Button>}

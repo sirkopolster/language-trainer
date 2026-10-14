@@ -3,6 +3,18 @@ import type { Choice, Exercise, Gaps, Tiles, Write } from '../../../domain/exerc
 import { fillGaps, isPunct, joinTokens } from '../../../domain/exercises';
 import { Button, BulbIcon } from '../../ds';
 
+/** What to do, in the learner's words: replaces direction labels. */
+export function instruction(ex: Exercise): string {
+  const lang = ex.dir === 'en-de' ? 'deutsch' : 'englisch';
+  const Lang = ex.dir === 'en-de' ? 'Deutsch' : 'Englisch';
+  switch (ex.type) {
+    case 'choice': return `Welcher Satz heißt das auf ${Lang}?`;
+    case 'tiles': return `Baue den ${lang}en Satz aus den Bausteinen.`;
+    case 'gaps': return `Fülle die Lücken im ${lang}en Satz.`;
+    default: return `Schreib den Satz auf ${Lang}.`;
+  }
+}
+
 /** One exercise = prompt + answer input. Calls onAnswer with the learner's sentence (or option). Locked after answering. */
 export function ExerciseView({ ex, locked, hint, onHint, onAnswer }: { ex: Exercise; locked: boolean; /** show a bulb that reveals the answer (level 0) */ hint?: boolean; onHint?: () => void; onAnswer: (typed: string) => void }) {
   const [shown, setShown] = useState(false);
@@ -12,7 +24,7 @@ export function ExerciseView({ ex, locked, hint, onHint, onAnswer }: { ex: Exerc
       <div className="card card-flat">
         <div className="row-between">
           <div className="grow">
-            <div className="text-sm muted">{ex.dir === 'en-de' ? 'Auf Deutsch:' : 'Auf Englisch:'}</div>
+            <div className="text-sm muted" data-testid="dir">{instruction(ex)}</div>
             <div className="h2" data-testid="prompt">{ex.prompt}</div>
           </div>
           {hint && !locked && <button type="button" className={`iconbtn${shown ? ' iconbtn-on' : ''}`} data-testid="hint" aria-label="Tipp" onClick={() => { if (!shown) setAsking(true); }}><BulbIcon /></button>}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Test, Unit, Word } from '../../../domain/types';
-import { AppBar, BackIcon, Badge, Button, Card, EmptyState, StarIcon, useToast } from '../../ds';
+import { AppBar, Badge, Button, Card, EmptyState, StarIcon, useToast } from '../../ds';
 
 /** S2 review: fix extracted words before they go into study. Edit inline, star = priority, delete, move to another unit, "Fertig" activates and deletes the photos. */
 export function ReviewScreen() {
@@ -47,7 +47,7 @@ export function ReviewScreen() {
 
   return (
     <>
-      <AppBar title={all ? 'Vokabeln und Sätze' : 'Wörter prüfen'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav(`/t/${testId}`)}><BackIcon /></button>} />
+      <AppBar title={all ? 'Vokabeln und Sätze' : 'Wörter prüfen'} onBack={() => nav(`/t/${testId}`)} />
       <main className="page stack">
         {words.length === 0 ? (
           <Card flat><EmptyState title="Nichts zu prüfen" text="Alle Wörter sind schon freigegeben oder es wurde noch nichts ausgewertet." action={<Button onClick={() => nav(`/t/${testId}`)}>Zurück zum Test</Button>} /></Card>

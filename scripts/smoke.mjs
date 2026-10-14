@@ -74,7 +74,7 @@ try {
     await t('part-next').click();
     await t('prompt').waitFor();
     if (!(await t('tile').count())) throw new Error('round 2 should be tiles');
-    if ((await t('dir').innerText()) !== 'Englisch → Deutsch') throw new Error('round 2 should start EN → DE');
+    if (!/deutschen Satz/.test(await t('dir').innerText())) throw new Error('round 2 should start EN → DE');
 
   });
   if (errors.length) throw new Error('console errors: ' + errors.join(' | '));

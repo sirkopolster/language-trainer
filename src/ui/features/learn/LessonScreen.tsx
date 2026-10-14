@@ -16,7 +16,6 @@ const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'wa
   wrong: { title: 'Noch nicht. So ist es richtig:', tone: 'bad' },
 };
 type Step = { word: Word; ex: Exercise; retry: boolean; dir: Direction };
-const DIR_LABEL: Record<Direction, string> = { 'en-de': 'Englisch → Deutsch', 'de-en': 'Deutsch → Englisch' };
 type Phase = { kind: 'plan' } | { kind: 'run'; part: number; queue: Step[]; done: number; mistakes: number; hints: number; feedback: Comparison | null; hintUsed: boolean } | { kind: 'partDone'; part: number; stars: number; mistakes: number; hints: number } | { kind: 'lessonDone'; crown: boolean; total: number };
 
 /** D-012 lesson: 5 sentences through Wählen → Bauen → Lücken → Lücken ohne Hilfe → Schreiben. Plan first, stars per part, crown when all parts are perfect. */
@@ -171,7 +170,6 @@ export function LessonScreen() {
       <AppBar title={`Runde ${phase.part + 1}: ${PARTS[phase.part].label}`} right={<button className="iconbtn iconbtn-lg" aria-label="Beenden" data-testid="close" onClick={back}><CloseIcon /></button>} />
       <main className="page stack">
         <ProgressBar value={phase.done} max={lesson.words.length * HALVES.length} thin />
-        <div className="text-sm muted" data-testid="dir">{DIR_LABEL[step.dir]}</div>
         <ExerciseView key={`${step.word.id}-${step.retry}-${phase.queue.length}`} ex={step.ex} locked={!!phase.feedback} hint={phase.part === 0 && step.dir === 'de-en' && !step.retry} onHint={() => setPhase({ ...phase, hintUsed: true })} onAnswer={answer} />
         {phase.feedback && fb && (
           <Card className={`feedback feedback-${fb.tone}`}>

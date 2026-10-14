@@ -162,7 +162,7 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 /* ---------- Eddie (mascot) ---------- */
 .eddie { display: flex; align-items: flex-end; gap: var(--s-2); }
 .eddie-img { flex: 0 0 auto; }
-.eddie-bubble { position: relative; flex: 1; min-width: 0; background: var(--card); border: 2px solid var(--line); border-radius: var(--r-lg); border-bottom-left-radius: 4px; padding: var(--s-2) var(--s-3); font-size: var(--fs-lg); font-weight: 700; }
+.eddie-bubble { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; background: var(--card); border: 2px solid var(--line); border-radius: var(--r-lg); border-bottom-left-radius: 4px; padding: var(--s-2) var(--s-3); font-size: var(--fs-lg); font-weight: 700; }
 .eddie-bubble::before { content: ''; position: absolute; left: -10px; bottom: 10px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 10px solid var(--line); }
 .eddie-bubble::after { content: ''; position: absolute; left: -7px; bottom: 10px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-right: 10px solid var(--card); }
 

@@ -112,7 +112,7 @@ export function LessonScreen() {
     <>
       <AppBar title={title} onBack={back} />
       <main className="page page-cols">
-        <div className="col-span"><EddieSays>In diesem Teil lernst du:</EddieSays></div>
+        <div className="col-span"><EddieSays action={<Button small data-testid="lesson-start" onClick={() => startPart(Math.min(progress.nextPart, PARTS.length - 1))}>{progress.nextPart === 0 ? 'Jetzt starten' : progress.nextPart < PARTS.length ? 'Weiter' : 'Nochmal'}</Button>}>In diesem Teil lernst du:</EddieSays></div>
         <div className="stack-sm">
           <div className="card">
           <details className="collapse" open={wide || showWords} onToggle={(e) => { if (!wide) setShowWords((e.target as HTMLDetailsElement).open); }}>

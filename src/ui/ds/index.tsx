@@ -180,11 +180,11 @@ export const GearIcon = () => svg('M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.7 1
 export const ListIcon = () => svg('M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01');
 // Lucide shapes (ISC) for the tab bar
 /** Eddie, the meerkat mascot, talking: picture left, speech bubble right. */
-export function EddieSays({ children, size = 64 }: { children: ReactNode; size?: number }) {
+export function EddieSays({ children, action, size = 64 }: { children: ReactNode; action?: ReactNode; size?: number }) {
   return (
     <div className="eddie">
       <img src="/eddie.svg" alt="" height={size} className="eddie-img" />
-      <div className="eddie-bubble">{children}</div>
+      <div className="eddie-bubble"><span className="grow">{children}</span>{action}</div>
     </div>
   );
 }

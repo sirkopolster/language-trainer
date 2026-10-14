@@ -66,7 +66,7 @@ export function Home() {
 
   return (
     <>
-      <AppBar title="SnapLearn" right={<span className="row">{me && <Button small data-testid="test-add" onClick={() => setNewTest(true)}>Neuer Test</Button>}<UserMenu name={accountName} role={role} onNameChange={load} /></span>} />
+      <AppBar title={<span className="row" style={{ gap: 8 }}><img src="/logo.svg" alt="" width="32" height="32" style={{ borderRadius: 8 }} />Snap<span style={{ color: 'var(--accent)', marginLeft: -4 }}>Learn</span></span>} right={<span className="row">{me && <Button small data-testid="test-add" onClick={() => setNewTest(true)}>Neuer Test</Button>}<UserMenu name={accountName} role={role} onNameChange={load} /></span>} />
       <main className="page stack">
         {profiles === null || role === null ? <p className="muted text-sm">Lädt…</p> : role === 'student' ? (
           !me ? (

@@ -27,7 +27,8 @@ export function Login() {
   return (
     <main className="page stack" style={{ minHeight: '100dvh', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
-        <div className="h1" style={{ color: 'var(--primary)' }}>SnapLearn</div>
+        <img src="/logo.svg" alt="" width="96" height="96" style={{ display: 'block', margin: '0 auto var(--s-2)' }} />
+        <div className="h1">Snap<span style={{ color: 'var(--accent)' }}>Learn</span></div>
         <p className="text-sm muted">Fotografieren · lernen · Test bestehen</p>
       </div>
       <Card>

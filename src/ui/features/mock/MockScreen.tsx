@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Award, Test, WordState } from '../../../domain/types';
@@ -15,6 +15,7 @@ export function MockScreen() {
   const [test, setTest] = useState<Test | null>(null);
   const [items, setItems] = useState<MockItem[] | null>(null);
   const [answers, setAnswers] = useState<{ typed: string }[]>([]);
+  const answersRef = useRef<{ typed: string }[]>([]); // the view can fire twice before React re-renders; the ref keeps one answer per item
   const [result, setResult] = useState<MockResult | null>(null);
   const [startedAt] = useState(() => new Date().toISOString());
 
@@ -26,8 +27,9 @@ export function MockScreen() {
   }, [testId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function answer(typed: string) {
-    if (!items || !test?.format) return;
-    const next = [...answers, { typed }];
+    if (!items || !test?.format || answersRef.current.length >= items.length) return;
+    const next = [...answersRef.current, { typed }];
+    answersRef.current = next;
     setAnswers(next);
     if (next.length < items.length) return;
     const r = scoreMock(items, next, test.format);

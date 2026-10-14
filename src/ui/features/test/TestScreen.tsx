@@ -125,7 +125,8 @@ function ProbetestTab({ test, secureShare, mocks, onStart }: { test: Test; testI
   const f = test.format!;
   return (
     <>
-      <EddieSays action={<Button data-testid="mock-start" onClick={onStart}>Probetest starten</Button>}>{R.text}</EddieSays>
+      <EddieSays>{R.text}</EddieSays>
+      <Button block data-testid="mock-start" onClick={onStart}>Probetest starten</Button>
       <Card>
         <div className="readiness"><ColorIcon color={R.color} large>{R.icon}</ColorIcon><div className="grow"><div className="h3">{R.label}</div><div className="text-sm muted">{Math.round(secureShare * 100)} % der Sätze sicher{mocks[0] ? ` · letzter Probetest ${mocks[0].score} / ${mocks[0].maxScore}` : ''}</div></div></div>
       </Card>

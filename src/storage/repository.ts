@@ -14,6 +14,7 @@ export interface Repository {
   listAllWords(): Promise<Word[]>;
   /** started_at, kind and number of answered items per session (home stats) */
   listSessions(profileId: string): Promise<{ startedAt: string; kind: 'study' | 'mock'; items: number }[]>;
+  listAllSessions(): Promise<{ profileId: string; unitId: string | null; startedAt: string; kind: 'study' | 'mock'; items: number }[]>;
   adminCreateStudent(s: { name: string; email: string; password: string; profileId?: string }): Promise<void>;
   adminUpdateStudent(s: { profileId: string; name?: string; email?: string; password?: string }): Promise<void>;
   addProfile(name: string): Promise<Profile>;

@@ -29,10 +29,9 @@ export function Home() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [accountName, setAccountName] = useState('');
 
-  const load = () => Promise.all([repo.getRole(), repo.listProfiles(), repo.listAllTests(), repo.listAllAwards(), repo.listAllUnits(), repo.listAllWords()]).then(async ([r, p, t, a, u, w]) => {
-    setRole(r); setProfiles(p); setTests(t); setAwards(a); setUnits(u); setWords(w);
+  const load = () => Promise.all([repo.getRole(), repo.listProfiles(), repo.listAllTests(), repo.listAllAwards(), repo.listAllUnits(), repo.listAllWords(), repo.listAllSessions()]).then(async ([r, p, t, a, u, w, se]) => {
+    setRole(r); setProfiles(p); setTests(t); setAwards(a); setUnits(u); setWords(w); setSessions(se);
     const own = p.find((x) => x.own);
-    if (own) setSessions(await repo.listSessions(own.id));
     const acc = await repo.getAccount();
     setAccountName(acc.name || own?.name || acc.email.split('@')[0]);
   }).catch((e: Error) => toast(e.message, 'bad'));
@@ -75,12 +74,12 @@ export function Home() {
           ) : (
             <>
               <h1 className="hello">Hi <span className="hello-name">{me.name}</span>, schön, dass du da bist</h1>
-              <Stats sessions={sessions} awards={awards.filter((a) => a.profileId === me.id)} />
+              <Stats sessions={sessions.filter((s) => s.profileId === me.id)} awards={awards.filter((a) => a.profileId === me.id)} />
               <h2 className="h2">Aktuelle Tests</h2>
               {tests.length === 0 ? (
                 <Card flat><EmptyState icon={<TestIcon />} title="Welcher Test steht an?" text="Lege den nächsten Vokabeltest an und fotografiere danach die Vokabelseiten." action={<Button data-testid="test-add-empty" onClick={() => setNewTest(true)}>Neuen Test anlegen</Button>} /></Card>
               ) : (
-                <div className="stack-sm">{tests.map((t) => <TestCard key={t.id} test={t} progress={testProgress(t, units, words, awards)} onClick={() => nav(`/t/${t.id}`)} />)}</div>
+                <div className="stack-sm">{tests.map((t) => <TestCard key={t.id} test={t} progress={testProgress(t, units, words, awards, sessions)} onClick={() => nav(`/t/${t.id}`)} />)}</div>
               )}
             </>
           )
@@ -104,7 +103,7 @@ export function Home() {
             {tests.length > 0 && (
               <>
                 <h2 className="h2">Aktuelle Tests</h2>
-                <div className="stack-sm">{tests.map((t) => <TestCard key={t.id} test={t} sub={profiles.find((p) => p.id === t.profileId)?.name} progress={testProgress(t, units, words, awards)} onClick={() => nav(`/t/${t.id}`)} />)}</div>
+                <div className="stack-sm">{tests.map((t) => <TestCard key={t.id} test={t} sub={profiles.find((p) => p.id === t.profileId)?.name} progress={testProgress(t, units, words, awards, sessions)} onClick={() => nav(`/t/${t.id}`)} />)}</div>
               </>
             )}
             <Button variant="ghost" block onClick={backup}>Backup (JSON) herunterladen</Button>

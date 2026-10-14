@@ -2,7 +2,7 @@
 import { PARTS } from './lessons';
 import type { Award } from './types';
 
-export interface SessionSummary { startedAt: string; kind: 'study' | 'mock'; items: number }
+export interface SessionSummary { startedAt: string; kind: 'study' | 'mock'; items: number; profileId?: string; unitId?: string | null }
 export interface Stats { days: number; partsDone: number; answers: number; mocks: number }
 
 /** days = distinct calendar days with a session · partsDone = parts where every round has stars · answers = all logged answers · mocks = mock sessions */

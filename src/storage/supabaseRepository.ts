@@ -89,6 +89,11 @@ export const supabaseRepository: Repository = {
     fail(error);
     return (data as { started_at: string; kind: 'study' | 'mock'; items: unknown[] }[]).map((r) => ({ startedAt: r.started_at, kind: r.kind, items: Array.isArray(r.items) ? r.items.length : 0 }));
   },
+  async listAllSessions() {
+    const { data, error } = await supabase.from('sessions').select('profile_id, unit_id, started_at, kind, items');
+    fail(error);
+    return (data as { profile_id: string; unit_id: string | null; started_at: string; kind: 'study' | 'mock'; items: unknown[] }[]).map((r) => ({ profileId: r.profile_id, unitId: r.unit_id, startedAt: r.started_at, kind: r.kind, items: Array.isArray(r.items) ? r.items.length : 0 }));
+  },
   async adminCreateStudent(s) { await callAdmin({ action: 'create-student', ...s }); },
   async adminUpdateStudent(s) { await callAdmin({ action: 'update-student', ...s }); },
   async deleteProfile(id) {

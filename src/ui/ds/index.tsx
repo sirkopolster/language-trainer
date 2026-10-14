@@ -105,14 +105,14 @@ export function Modal({ open, title, onClose, children, actions }: { open: boole
 
 /* ---------- Toast ---------- */
 type Toast = { id: number; text: string; tone?: 'good' | 'bad' };
-const ToastCtx = createContext<(text: string, tone?: Toast['tone']) => void>(() => undefined);
+const ToastCtx = createContext<(text: string, tone?: Toast['tone'], ms?: number) => void>(() => undefined);
 export const useToast = () => useContext(ToastCtx);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const show = useCallback((text: string, tone?: Toast['tone']) => {
+  const show = useCallback((text: string, tone?: Toast['tone'], ms = 2600) => {
     const id = Date.now() + Math.random();
     setToasts((t) => [...t, { id, text, tone }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2600);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), ms);
   }, []);
   return (
     <ToastCtx.Provider value={show}>

@@ -33,7 +33,7 @@ export function SettingsTab({ test, words, onTestChange, onWordsChange }: { test
 
   function saveTopics(next: string[]) {
     setTopics(next);
-    repo.updateTest(test.id, { topics: next }).then(() => onTestChange({ ...test, topics: next })).catch((e: Error) => toast(e.message, 'bad'));
+    repo.updateTest(test.id, { topics: next }).then(() => { onTestChange({ ...test, topics: next }); toast('Änderungen automatisch gespeichert', 'good', 1500); }).catch((e: Error) => toast(e.message, 'bad'));
   }
 
   async function upload(kind: PhotoKind, files: FileList | null) {

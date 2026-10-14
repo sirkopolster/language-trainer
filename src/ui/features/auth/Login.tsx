@@ -28,7 +28,7 @@ export function Login() {
       </div>
       <Card>
         <form className="stack" onSubmit={submit}>
-          <Input data-testid="login-email" label="E-Mail (Eltern)" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input data-testid="login-email" label="E-Mail" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input data-testid="login-password" label="Passwort" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} error={error ?? undefined} hint={mode === 'signup' ? 'Mindestens 8 Zeichen.' : undefined} />
           {info && <p className="text-sm" style={{ color: 'var(--good)' }}>{info}</p>}
           <Button data-testid="login-submit" type="submit" block disabled={busy}>{mode === 'login' ? 'Anmelden' : 'Konto anlegen'}</Button>
@@ -37,7 +37,7 @@ export function Login() {
           </Button>
         </form>
       </Card>
-      <p className="text-xs muted" style={{ textAlign: 'center' }}>Nur die E-Mail der Eltern. Kinder brauchen kein eigenes Konto.</p>
+      <p className="text-xs muted" style={{ textAlign: 'center' }}>Eltern legen sich ein Konto an und erstellen darin die Konten ihrer Kinder.</p>
     </main>
   );
 }

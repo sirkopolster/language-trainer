@@ -1,6 +1,8 @@
 // Domain types — mirror docs/data-model.md. Code English, UI German.
 
-export interface Profile { id: string; name: string; settings: { keepPhotos: boolean }; createdAt: string }
+/** own = the profile of the logged-in student; email only visible to the admin (from auth metadata) */
+export interface Profile { id: string; name: string; settings: { keepPhotos: boolean }; createdAt: string; own: boolean; email?: string }
+export type Role = 'admin' | 'student';
 
 export type TestStatus = 'setup' | 'active' | 'done';
 export interface Test { id: string; profileId: string; name: string; langFrom: string; langTo: string; testDate: string | null; format: TestFormat | null; /** what the test covers; null = never prefilled */ topics: string[] | null; status: TestStatus; createdAt: string }

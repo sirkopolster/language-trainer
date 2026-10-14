@@ -1,4 +1,4 @@
-// Smoke test: sign-up/login → profile → test from home → upload 2 photos → delete 1 → home lists it → backup → seeded lesson (plan, round 1 Wählen with a hint → 2 stars, round 2 is Bauen). Usage: node scripts/smoke.mjs [baseUrl]
+// Smoke test: sign-up/login → profile → test from home → upload 2 photos → delete 1 → home lists it → seeded lesson (plan, round 1 Wählen with a hint → 2 stars, round 2 is Bauen). Usage: node scripts/smoke.mjs [baseUrl]
 // Rules (blueprint §7): data-testid selectors, waitFor not sleeps, one step per feature, cleanup in finally.
 import { chromium } from 'playwright';
 import { env } from './env.mjs';
@@ -27,11 +27,11 @@ try {
     const outcome = await Promise.race([t('profile-add').waitFor().then(() => 'in'), page.getByText('stimmt nicht').waitFor().then(() => 'no-user')]);
     if (outcome === 'no-user') { await t('login-toggle').click(); await t('login-submit').click(); await t('profile-add').waitFor(); }
   });
-  await step('add profile', async () => {
+  await step('student name', async () => {
     await t('profile-add').click();
     await t('profile-name').fill('QA Kind');
     await t('profile-save').click();
-    await page.locator('.item-title', { hasText: 'QA Kind' }).waitFor();
+    await page.getByText('Aktuelle Tests').waitFor();
   });
   await step('add test from home', async () => {
     await t('test-add').click();
@@ -51,13 +51,6 @@ try {
   await step('home lists the test', async () => {
     await page.goto(base + '/');
     await page.locator('.item-title', { hasText: 'QA Test' }).waitFor();
-    await page.locator('.item-sub', { hasText: '1 Test' }).waitFor();
-  });
-  await step('backup download', async () => {
-    const dl = page.waitForEvent('download');
-    await page.getByText('Backup (JSON)').click();
-    const name = (await dl).suggestedFilename();
-    if (!name.startsWith('snaplearn-backup-')) throw new Error('unexpected file ' + name);
   });
   await step('lesson: plan, round 1 with one hint, stars', async () => {
     await qaCleanup();

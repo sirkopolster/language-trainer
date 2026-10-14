@@ -1,8 +1,12 @@
-import type { Award, Photo, PhotoKind, Profile, Test, Unit, Word, WordState } from '../domain/types';
+import type { Award, Photo, PhotoKind, Profile, Role, Test, Unit, Word, WordState } from '../domain/types';
 
 /** Storage boundary. S0: profiles; S1: tests + photos; grows per slice. */
 export interface Repository {
+  getRole(): Promise<Role>;
   listProfiles(): Promise<Profile[]>;
+  listAllAwards(): Promise<Award[]>;
+  adminCreateStudent(s: { name: string; email: string; password: string; profileId?: string }): Promise<void>;
+  adminUpdateStudent(s: { profileId: string; name?: string; email?: string; password?: string }): Promise<void>;
   addProfile(name: string): Promise<Profile>;
   deleteProfile(id: string): Promise<void>;
   listTests(profileId: string): Promise<Test[]>;

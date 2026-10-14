@@ -4,7 +4,7 @@ import type { Repository } from './repository';
 
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string, import.meta.env.VITE_SUPABASE_ANON_KEY as string);
 
-type ProfileRow = { id: string; name: string; settings: { keep_photos?: boolean }; created_at: string };
+type ProfileRow = { id: string; user_id: string; admin_id: string | null; name: string; email: string | null; settings: { keep_photos?: boolean }; created_at: string };
 type TestRow = { id: string; profile_id: string; name: string; lang_from: string; lang_to: string; test_date: string | null; format: Test['format']; topics: string[] | null; status: Test['status']; created_at: string };
 
 type UnitRow = { id: string; test_id: string; label: string; sort: number };
@@ -13,7 +13,13 @@ type StateRow = { word_id: string; box: number; due_at: string; streak: number; 
 type AwardRow = { id: string; profile_id: string; kind: Award['kind']; ref_id: string | null; ref: string; value: number; awarded_at: string };
 type PhotoRow = { id: string; test_id: string; kind: Photo['kind']; storage_path: string; status: Photo['status']; created_at: string };
 
-const toProfile = (r: ProfileRow): Profile => ({ id: r.id, name: r.name, settings: { keepPhotos: !!r.settings?.keep_photos }, createdAt: r.created_at });
+const toProfile = (r: ProfileRow, uid: string): Profile => ({ id: r.id, name: r.name, settings: { keepPhotos: !!r.settings?.keep_photos }, createdAt: r.created_at, own: r.user_id === uid, ...(r.email ? { email: r.email } : {}) });
+const callAdmin = async (body: Record<string, unknown>) => {
+  const { data, error } = await supabase.functions.invoke('admin', { body });
+  if (error) { const b = await (error as { context?: Response }).context?.json?.().catch(() => null); throw new Error(b?.error ?? 'Aktion fehlgeschlagen'); }
+  if (data?.error) throw new Error(data.error);
+  return data;
+};
 const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name: r.name, langFrom: r.lang_from, langTo: r.lang_to, testDate: r.test_date, format: r.format, topics: r.topics ?? null, status: r.status, createdAt: r.created_at });
 
 const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort });
@@ -28,17 +34,29 @@ const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : [...crypto.getRand
 const fail = (e: { message: string } | null) => { if (e) throw new Error(e.message); };
 
 export const supabaseRepository: Repository = {
+  async getRole() {
+    const { data } = await supabase.from('admins').select('user_id').maybeSingle();
+    return data ? 'admin' : 'student';
+  },
   async listProfiles() {
+    const { data: u } = await supabase.auth.getUser();
     const { data, error } = await supabase.from('profiles').select('*').order('created_at');
     fail(error);
-    return (data as ProfileRow[]).map(toProfile);
+    return (data as ProfileRow[]).map((r) => toProfile(r, u.user?.id ?? ''));
   },
   async addProfile(name) {
     const { data: u } = await supabase.auth.getUser();
     const { data, error } = await supabase.from('profiles').insert({ name, user_id: u.user?.id }).select().single();
     fail(error);
-    return toProfile(data as ProfileRow);
+    return toProfile(data as ProfileRow, u.user?.id ?? '');
   },
+  async listAllAwards() {
+    const { data, error } = await supabase.from('awards').select('*');
+    fail(error);
+    return (data as AwardRow[]).map(toAward);
+  },
+  async adminCreateStudent(s) { await callAdmin({ action: 'create-student', ...s }); },
+  async adminUpdateStudent(s) { await callAdmin({ action: 'update-student', ...s }); },
   async deleteProfile(id) {
     const { error } = await supabase.from('profiles').delete().eq('id', id);
     fail(error);

@@ -5,7 +5,7 @@ import type { Test, Word, WordState } from '../../../domain/types';
 import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, composeSession, exerciseFor, requeueIndex, type SessionItem } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
-import { AppBar, Button, Card, EmptyState, ProgressBar, StarIcon, useToast } from '../../ds';
+import { AppBar, Button, Card, CloseIcon, EmptyState, ProgressBar, StarIcon, useToast } from '../../ds';
 import { ExerciseView } from './Exercises';
 
 type Step = { item: SessionItem; ex: Exercise; retry: boolean };
@@ -98,7 +98,7 @@ export function LearnScreen() {
   const fb = feedback ? FEEDBACK[feedback.result] : null;
   return (
     <>
-      <AppBar title={step?.retry ? 'Nochmal tippen' : 'Lernen'} right={<Button small variant="ghost" onClick={() => nav(`/t/${testId}`)}>Abbrechen</Button>} />
+      <AppBar title={step?.retry ? 'Nochmal tippen' : 'Lernen'} right={<button className="iconbtn iconbtn-lg" aria-label="Beenden" onClick={() => nav(`/t/${testId}`)}><CloseIcon /></button>} />
       <main className="page stack">
         <ProgressBar value={done.total} max={total} thin />
         {step && <ExerciseView key={`${step.item.word.id}-${step.retry}-${done.total}`} ex={step.ex} locked={!!feedback} hint={step.item.state.box === 0 && !step.retry && step.ex.type === 'choice' && step.ex.dir === 'de-en'} onAnswer={answer} />}

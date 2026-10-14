@@ -7,7 +7,7 @@ import type { Award, Word } from './types';
 export const LESSON_SIZE = 5;
 /** Four rounds; each round asks the whole lesson first EN → DE (understand), then DE → EN (produce, the test direction). */
 export const PARTS: { type: ExerciseType; label: string; level: number }[] = [
-  { type: 'choice', label: 'Wählen', level: 0 },
+  { type: 'choice', label: 'Zuordnen', level: 0 },
   { type: 'tiles', label: 'Bauen', level: 1 },
   { type: 'gapsHint', label: 'Lücken', level: 2 },
   { type: 'write', label: 'Schreiben', level: 3 },

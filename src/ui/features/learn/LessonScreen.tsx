@@ -6,7 +6,7 @@ import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, newState, requeueIndex } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
 import { HALVES, MAX_STARS, PARTS, lessonProgress, lessonRef, partRef, roundOrder, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
-import { AppBar, BackIcon, Button, Card, Chevron, CrownIcon, Modal, ProgressBar, StarIcon, useMediaQuery, useToast } from '../../ds';
+import { AppBar, Button, Card, Chevron, CloseIcon, CrownIcon, Modal, ProgressBar, StarIcon, useMediaQuery, useToast } from '../../ds';
 import { ExerciseView } from './Exercises';
 
 const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'warn' | 'bad' }> = {
@@ -105,13 +105,13 @@ export function LessonScreen() {
     setConfirmReset(false);
   }
 
-  const back = <button className="iconbtn" aria-label="Zurück" onClick={() => nav(`/t/${testId}`)}><BackIcon /></button>;
-  if (!lesson) return <><AppBar title="Teil" left={back} /><main className="page"><p className="muted text-sm">Lädt…</p></main></>;
+  const back = () => nav(`/t/${testId}`);
+  if (!lesson) return <><AppBar title="Teil" onBack={back} /><main className="page"><p className="muted text-sm">Lädt…</p></main></>;
   const title = `Teil ${n}`;
 
   if (phase.kind === 'plan') return (
     <>
-      <AppBar title={title} left={back} />
+      <AppBar title={title} onBack={back} />
       <main className="page page-cols">
         <div className="card">
           <details className="collapse" open={wide || showWords} onToggle={(e) => { if (!wide) setShowWords((e.target as HTMLDetailsElement).open); }}>
@@ -168,7 +168,7 @@ export function LessonScreen() {
   const fb = phase.feedback ? FEEDBACK[phase.feedback.result] : null;
   return (
     <>
-      <AppBar title={`Runde ${phase.part + 1}: ${PARTS[phase.part].label}`} right={<Button small variant="ghost" onClick={() => nav(`/t/${testId}`)}>Abbrechen</Button>} />
+      <AppBar title={`Runde ${phase.part + 1}: ${PARTS[phase.part].label}`} right={<button className="iconbtn iconbtn-lg" aria-label="Beenden" data-testid="close" onClick={back}><CloseIcon /></button>} />
       <main className="page stack">
         <ProgressBar value={phase.done} max={lesson.words.length * HALVES.length} thin />
         <div className="text-sm muted" data-testid="dir">{DIR_LABEL[step.dir]}</div>

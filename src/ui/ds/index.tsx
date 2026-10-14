@@ -149,7 +149,9 @@ export function EmptyState({ icon = '✨', title, text, action }: { icon?: React
 }
 
 /* ---------- Shell: AppBar + TabBar ---------- */
-export function AppBar({ title, left, right }: { title: ReactNode; left?: ReactNode; right?: ReactNode }) {
+/** onBack makes chevron + title one big back button */
+export function AppBar({ title, left, right, onBack }: { title: ReactNode; left?: ReactNode; right?: ReactNode; onBack?: () => void }) {
+  if (onBack) return <header className="appbar"><button type="button" className="appbar-back" aria-label="Zurück" onClick={onBack}><BackIcon /><h1 className="appbar-title">{title}</h1></button>{right}</header>;
   return <header className="appbar">{left}<h1 className="appbar-title">{title}</h1>{right}</header>;
 }
 export function TabBar({ tabs, active, onSelect }: { tabs: { id: string; label: string; icon: ReactNode }[]; active: string; onSelect: (id: string) => void }) {
@@ -181,6 +183,7 @@ export type IconColor = 'violet' | 'orange' | 'green' | 'blue' | 'pink' | 'yello
 export function ColorIcon({ color, large, children }: { color: IconColor; large?: boolean; children: ReactNode }) {
   return <span className={cx('cicon', `cicon-${color}`, large && 'cicon-lg')}>{children}</span>;
 }
+export const CloseIcon = () => svg('M18 6L6 18M6 6l12 12');
 export const PencilIcon = () => svg('M17 3a2.8 2.8 0 114 4L7.5 20.5 2 22l1.5-5.5z');
 export const FileTextIcon = () => svg('M15 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7zM14 2v4a2 2 0 002 2h4M10 9H8M16 13H8M16 17H8');
 export const GraduationIcon = () => svg('M21.42 10.92a1 1 0 00-.02-1.84L12.83 5.18a2 2 0 00-1.66 0L2.6 9.08a1 1 0 000 1.83l8.57 3.91a2 2 0 001.66 0zM22 10v6M6 12.5V16a6 3 0 0012 0v-3.5');

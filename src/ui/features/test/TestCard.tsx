@@ -37,9 +37,11 @@ export function TestCard({ test, sub, progress, onClick }: { test: Test; sub?: R
   ].filter(Boolean) as { icon: ReactNode; text: string }[];
   return (
     <button type="button" className="testcard" data-testid={`test-${test.id}`} onClick={onClick}>
-      <div className="testcard-name">{test.name}</div>
+      <div className="row-between" style={{ alignItems: 'flex-start' }}>
+        <div className="testcard-name grow">{test.name}</div>
+        <div className="testcard-status" data-testid="test-status"><ColorIcon color={STATUS[testStatus(progress)].color}>{STATUS[testStatus(progress)].icon}</ColorIcon><span className="text-xs" style={{ fontWeight: 600 }}>{STATUS[testStatus(progress)].label}</span></div>
+      </div>
       <div className="text-sm muted">{dateLine(test)}{sub ? <> · {sub}</> : null}</div>
-      <div className="row" data-testid="test-status"><ColorIcon color={STATUS[testStatus(progress)].color}>{STATUS[testStatus(progress)].icon}</ColorIcon><span className="text-sm" style={{ fontWeight: 600 }}>{STATUS[testStatus(progress)].label}</span></div>
       {chips.length > 0 && <div className="row" style={{ flexWrap: 'wrap' }}>{chips.map((c) => <span key={c.text} className="chip"><span className="chip-icon">{c.icon}</span>{c.text}</span>)}</div>}
     </button>
   );

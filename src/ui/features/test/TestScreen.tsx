@@ -8,6 +8,7 @@ import { fmtDate } from './NewTestModal';
 import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, ColorIcon, CrownIcon, EddieSays, EmptyState, FileTextIcon, GraduationIcon, List, ListItem, Modal, PencilIcon, RocketIcon, SproutIcon, StarIcon, TabBar, TestIcon, TrophyIcon, useToast } from '../../ds';
 import { SettingsTab } from './SettingsTab';
 
+const SECTION_LABEL: Record<string, string> = { translate: 'Übersetzen', gap: 'Lückentext', choice: 'Auswahl', match: 'Zuordnen', other: 'Sonstige' };
 type Tab = 'lernen' | 'probetest' | 'einstellungen';
 const TABS = [{ id: 'einstellungen', label: 'Testinhalt', icon: <FileTextIcon /> }, { id: 'lernen', label: 'Lernen', icon: <GraduationIcon /> }, { id: 'probetest', label: 'Probetest', icon: <ClipboardCheckIcon /> }];
 
@@ -132,7 +133,7 @@ function ProbetestTab({ test, secureShare, mocks, onStart }: { test: Test; testI
       </Card>
       <Card title="So ist der Test aufgebaut">
         <div className="stack-sm">
-          {f.sections.filter((s) => s.type !== 'other').map((s, i) => <div key={i} className="row-between text-sm"><span>{s.label ?? s.type}</span><span className="muted">{s.items} Aufgaben · {s.points} P.</span></div>)}
+          {f.sections.filter((s) => s.type !== 'other').map((s, i) => <div key={i} className="row-between text-sm"><span>{s.label ?? SECTION_LABEL[s.type]}</span><span className="muted">{s.items} Aufgaben · {s.points} P.</span></div>)}
           <div className="row-between text-sm"><strong>Bestanden ab</strong><strong>{f.passMark ?? Math.round(f.totalPoints * 0.8 * 10) / 10} von {f.totalPoints} Punkten</strong></div>
         </div>
       </Card>

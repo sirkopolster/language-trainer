@@ -106,6 +106,9 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 
 /* AppBar + bottom nav (shell) */
 .appbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: var(--s-2); min-height: 56px; padding: 0 var(--s-3); background: var(--card); border-bottom: 1px solid var(--line); }
+.title-edit { display: flex; align-items: center; gap: var(--s-1); min-width: 0; }
+.title-edit .iconbtn { width: 32px; height: 32px; color: var(--muted); }
+.title-input { font: inherit; font-weight: 800; font-size: var(--fs-lg); width: 100%; min-width: 0; border: 0; border-bottom: 2px solid var(--primary); background: transparent; outline: none; padding: 2px 0; }
 .appbar-title { font-weight: 800; font-size: var(--fs-lg); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .iconbtn { width: 40px; height: 40px; border-radius: var(--r-md); border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--text); }
 .iconbtn:active { background: var(--primary-soft); }

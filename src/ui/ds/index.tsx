@@ -137,7 +137,7 @@ export function EmptyState({ icon = '✨', title, text, action }: { icon?: React
 }
 
 /* ---------- Shell: AppBar + TabBar ---------- */
-export function AppBar({ title, left, right }: { title: string; left?: ReactNode; right?: ReactNode }) {
+export function AppBar({ title, left, right }: { title: ReactNode; left?: ReactNode; right?: ReactNode }) {
   return <header className="appbar">{left}<h1 className="appbar-title">{title}</h1>{right}</header>;
 }
 export function TabBar({ tabs, active, onSelect }: { tabs: { id: string; label: string; icon: ReactNode }[]; active: string; onSelect: (id: string) => void }) {

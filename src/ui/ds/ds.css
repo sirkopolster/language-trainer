@@ -199,6 +199,8 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 .feedback .btn { margin-top: var(--s-3); }
 .diff-bad { color: var(--bad); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; }
 
+.plan-top { display: flex; align-items: flex-end; }
+@media (min-width: 768px) { .plan-top { min-height: 72px; } .plan-top > * { width: 100%; } .plan-top > .btn { width: auto; } }
 .plan { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
 .plan-item { width: 100%; display: flex; align-items: center; gap: var(--s-2); padding: var(--s-3); border: 0; border-radius: var(--r-md); background: var(--bg); font-size: var(--fs-md); font-weight: 600; text-align: left; cursor: pointer; }
 .plan-item:active { transform: scale(.98); }

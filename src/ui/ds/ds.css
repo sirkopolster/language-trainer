@@ -152,7 +152,13 @@ textarea.input { min-height: 96px; padding: var(--s-2) var(--s-3); resize: verti
 /* ---------- Test card (home) ---------- */
 .testcard { width: 100%; text-align: left; display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3); border: 0; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-1); cursor: pointer; color: var(--text); }
 .testcard:active { transform: scale(.99); }
-.testcard-status { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; max-width: 92px; color: var(--muted); }
+.statuspill { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: var(--r-pill); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
+.statuspill-icon { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.statuspill-icon svg { width: 13px; height: 13px; }
+.statuspill-blue { background: #e6f1ff; color: #1f6fd0; } .statuspill-blue .statuspill-icon { background: #2f8ef5; }
+.statuspill-orange { background: var(--accent-soft); color: #c45f12; } .statuspill-orange .statuspill-icon { background: var(--accent); }
+.statuspill-yellow { background: #fff6d6; color: #9a6b00; } .statuspill-yellow .statuspill-icon { background: #f5b921; }
+.testcard-date { margin-top: -6px; }
 .testcard-name { font-size: var(--fs-xl); font-weight: 700; line-height: 1.2; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: var(--r-pill); background: var(--good-soft); color: var(--text); font-size: var(--fs-sm); font-weight: 600; }
 .chip-icon { width: 22px; height: 22px; border-radius: 50%; background: var(--good); color: #fff; display: grid; place-items: center; }

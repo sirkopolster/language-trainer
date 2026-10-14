@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Award, Test, Unit, Word } from '../../../domain/types';
 import { MAX_STARS, lessonProgress, splitLessons } from '../../../domain/lessons';
-import { ColorIcon, CrownIcon, FlameIcon, GraduationIcon, RocketIcon, SproutIcon, StarIcon, TestIcon, TrophyIcon } from '../../ds';
+import { CrownIcon, FlameIcon, GraduationIcon, RocketIcon, SproutIcon, StarIcon, TestIcon, TrophyIcon } from '../../ds';
 import type { SessionSummary } from '../../../domain/stats';
 import { fmtDate } from './NewTestModal';
 
@@ -37,11 +37,11 @@ export function TestCard({ test, sub, progress, onClick }: { test: Test; sub?: R
   ].filter(Boolean) as { icon: ReactNode; text: string }[];
   return (
     <button type="button" className="testcard" data-testid={`test-${test.id}`} onClick={onClick}>
-      <div className="row-between" style={{ alignItems: 'flex-start' }}>
+      <div className="row-between">
         <div className="testcard-name grow">{test.name}</div>
-        <div className="testcard-status" data-testid="test-status"><ColorIcon color={STATUS[testStatus(progress)].color}>{STATUS[testStatus(progress)].icon}</ColorIcon><span className="text-xs" style={{ fontWeight: 600 }}>{STATUS[testStatus(progress)].label}</span></div>
+        <span className={`statuspill statuspill-${STATUS[testStatus(progress)].color}`} data-testid="test-status"><span className="statuspill-icon">{STATUS[testStatus(progress)].icon}</span>{STATUS[testStatus(progress)].label}</span>
       </div>
-      <div className="text-sm muted">{dateLine(test)}{sub ? <> · {sub}</> : null}</div>
+      <div className="text-sm muted testcard-date">{dateLine(test)}{sub ? <> · {sub}</> : null}</div>
       {chips.length > 0 && <div className="row" style={{ flexWrap: 'wrap' }}>{chips.map((c) => <span key={c.text} className="chip"><span className="chip-icon">{c.icon}</span>{c.text}</span>)}</div>}
     </button>
   );

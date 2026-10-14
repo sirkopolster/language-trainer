@@ -112,8 +112,8 @@ export function LessonScreen() {
     <>
       <AppBar title={title} onBack={back} />
       <main className="page page-cols">
+        <div className="col-span"><EddieSays>In diesem Teil lernst du:</EddieSays></div>
         <div className="stack-sm">
-          <EddieSays>In diesem Teil lernst du:</EddieSays>
           <div className="card">
           <details className="collapse" open={wide || showWords} onToggle={(e) => { if (!wide) setShowWords((e.target as HTMLDetailsElement).open); }}>
             <summary>{wide ? `${lesson.words.length} Sätze` : <>{lesson.words.length} Sätze anzeigen<span className="chev"><Chevron /></span></>}</summary>

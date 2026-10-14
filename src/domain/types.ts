@@ -3,7 +3,7 @@
 export interface Profile { id: string; name: string; settings: { keepPhotos: boolean }; createdAt: string }
 
 export type TestStatus = 'setup' | 'active' | 'done';
-export interface Test { id: string; profileId: string; name: string; langFrom: string; langTo: string; testDate: string | null; format: TestFormat | null; status: TestStatus; createdAt: string }
+export interface Test { id: string; profileId: string; name: string; langFrom: string; langTo: string; testDate: string | null; format: TestFormat | null; /** what the test covers; null = never prefilled */ topics: string[] | null; status: TestStatus; createdAt: string }
 
 export type SectionType = 'translate' | 'gap' | 'choice' | 'match' | 'other';
 export interface TestSection { type: SectionType; direction: string; items: number; points: number; label?: string }

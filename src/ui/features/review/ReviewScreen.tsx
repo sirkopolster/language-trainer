@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Test, Unit, Word } from '../../../domain/types';
 import { AppBar, BackIcon, Badge, Button, Card, EmptyState, StarIcon, useToast } from '../../ds';
@@ -7,6 +7,8 @@ import { AppBar, BackIcon, Badge, Button, Card, EmptyState, StarIcon, useToast }
 /** S2 review: fix extracted words before they go into study. Edit inline, star = priority, delete, move to another unit, "Fertig" activates and deletes the photos. */
 export function ReviewScreen() {
   const { testId = '' } = useParams();
+  const [params] = useSearchParams();
+  const all = params.get('all') === '1';
   const nav = useNavigate();
   const toast = useToast();
   const [test, setTest] = useState<Test | null>(null);
@@ -16,7 +18,7 @@ export function ReviewScreen() {
 
   useEffect(() => {
     Promise.all([repo.getTest(testId), repo.listUnits(testId), repo.listWords(testId)])
-      .then(([t, u, w]) => { setTest(t); setUnits(u); setWords(w.filter((x) => x.status === 'review')); })
+      .then(([t, u, w]) => { setTest(t); setUnits(u); setWords(w.filter((x) => all || x.status === 'review')); })
       .catch((e: Error) => toast(e.message, 'bad'));
   }, [testId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -34,17 +36,18 @@ export function ReviewScreen() {
       await repo.activateWords(testId);
       const keep = (await repo.listProfiles()).find((p) => p.id === test.profileId)?.settings.keepPhotos;
       if (!keep) await repo.deletePhotoFiles(testId);
-      toast(`${words.length} Wörter bereit zum Lernen`, 'good');
+      toast(`${open} Sätze bereit zum Lernen`, 'good');
       nav(`/t/${testId}`);
     } catch (e) { toast((e as Error).message, 'bad'); }
     setBusy(false);
   }
 
   const prio = words.filter((w) => w.priority).length;
+  const open = words.filter((w) => w.status === 'review').length;
 
   return (
     <>
-      <AppBar title="Wörter prüfen" left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav(`/t/${testId}`)}><BackIcon /></button>} />
+      <AppBar title={all ? 'Vokabeln und Sätze' : 'Wörter prüfen'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav(`/t/${testId}`)}><BackIcon /></button>} />
       <main className="page stack">
         {words.length === 0 ? (
           <Card flat><EmptyState title="Nichts zu prüfen" text="Alle Wörter sind schon freigegeben oder es wurde noch nichts ausgewertet." action={<Button onClick={() => nav(`/t/${testId}`)}>Zurück zum Test</Button>} /></Card>
@@ -72,7 +75,7 @@ export function ReviewScreen() {
                 </div>
               </Card>
             ))}
-            <Button block data-testid="review-finish" onClick={finish} disabled={busy}>Fertig, {words.length} Wörter lernen</Button>
+            {open > 0 ? <Button block data-testid="review-finish" onClick={finish} disabled={busy}>Fertig, {open} neue Sätze lernen</Button> : <Button block variant="secondary" onClick={() => nav(`/t/${testId}`)}>Zurück zum Test</Button>}
           </>
         )}
       </main>

@@ -5,7 +5,7 @@ import type { Repository } from './repository';
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string, import.meta.env.VITE_SUPABASE_ANON_KEY as string);
 
 type ProfileRow = { id: string; name: string; settings: { keep_photos?: boolean }; created_at: string };
-type TestRow = { id: string; profile_id: string; name: string; lang_from: string; lang_to: string; test_date: string | null; format: Test['format']; status: Test['status']; created_at: string };
+type TestRow = { id: string; profile_id: string; name: string; lang_from: string; lang_to: string; test_date: string | null; format: Test['format']; topics: string[] | null; status: Test['status']; created_at: string };
 
 type UnitRow = { id: string; test_id: string; label: string; sort: number };
 type WordRow = { id: string; unit_id: string; source: string; target: string; example: string | null; priority: boolean; status: Word['status'] };
@@ -14,7 +14,7 @@ type AwardRow = { id: string; profile_id: string; kind: Award['kind']; ref_id: s
 type PhotoRow = { id: string; test_id: string; kind: Photo['kind']; storage_path: string; status: Photo['status']; created_at: string };
 
 const toProfile = (r: ProfileRow): Profile => ({ id: r.id, name: r.name, settings: { keepPhotos: !!r.settings?.keep_photos }, createdAt: r.created_at });
-const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name: r.name, langFrom: r.lang_from, langTo: r.lang_to, testDate: r.test_date, format: r.format, status: r.status, createdAt: r.created_at });
+const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name: r.name, langFrom: r.lang_from, langTo: r.lang_to, testDate: r.test_date, format: r.format, topics: r.topics ?? null, status: r.status, createdAt: r.created_at });
 
 const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort });
 const toWord = (r: WordRow): Word => ({ id: r.id, unitId: r.unit_id, source: r.source, target: r.target, example: r.example, priority: r.priority, status: r.status });
@@ -62,6 +62,14 @@ export const supabaseRepository: Repository = {
     const { data, error } = await supabase.from('tests').insert({ profile_id: profileId, name: t.name, lang_from: t.langFrom, lang_to: t.langTo, test_date: t.testDate }).select().single();
     fail(error);
     return toTest(data as TestRow);
+  },
+  async updateTest(id, p) {
+    const row: Record<string, unknown> = {};
+    if (p.name !== undefined) row.name = p.name;
+    if (p.testDate !== undefined) row.test_date = p.testDate;
+    if (p.topics !== undefined) row.topics = p.topics;
+    const { error } = await supabase.from('tests').update(row).eq('id', id);
+    fail(error);
   },
   async listPhotos(testId) {
     const { data, error } = await supabase.from('photos').select('*').eq('test_id', testId).neq('status', 'deleted').order('created_at');

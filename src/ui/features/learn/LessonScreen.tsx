@@ -98,35 +98,35 @@ export function LessonScreen() {
       await repo.resetLesson(test.profileId, unitId, n, lesson.words.map((w) => w.id));
       setAwards((a) => a.filter((x) => !(x.refId === unitId && x.ref.startsWith(`lesson:${n}`))));
       setStates((m) => { const c = new Map(m); lesson.words.forEach((w) => c.delete(w.id)); return c; });
-      toast('Lektion zurückgesetzt', 'good');
+      toast('Teil zurückgesetzt', 'good');
     } catch (e) { toast((e as Error).message, 'bad'); }
     setConfirmReset(false);
   }
 
   const back = <button className="iconbtn" aria-label="Zurück" onClick={() => nav(`/t/${testId}`)}><BackIcon /></button>;
-  if (!lesson) return <><AppBar title="Lektion" left={back} /><main className="page"><p className="muted text-sm">Lädt…</p></main></>;
-  const title = `Lektion ${n}`;
+  if (!lesson) return <><AppBar title="Teil" left={back} /><main className="page"><p className="muted text-sm">Lädt…</p></main></>;
+  const title = `Teil ${n}`;
 
   if (phase.kind === 'plan') return (
     <>
       <AppBar title={title} left={back} />
       <main className="page stack">
-        <Card title="In dieser Lektion lernst du:">
+        <Card title="In diesem Teil lernst du:">
           <ul className="pairs">
             {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span></li>)}
           </ul>
         </Card>
-        <Card title="Lektionsfahrplan">
+        <Card title="Fahrplan">
           <p className="text-sm muted">Runde antippen zum Starten. Jede Runde erst Englisch → Deutsch, dann Deutsch → Englisch.</p>
           <ol className="plan">
             {PARTS.map((p, i) => <li key={p.type}><button type="button" data-testid={`plan-${i}`} className={`plan-item${i === progress.nextPart ? ' plan-next' : i < progress.nextPart ? ' plan-done' : ''}`} onClick={() => startPart(i)}><span className="plan-n">{i + 1}</span><span className="grow">{p.label}</span><Stars n={progress.stars[p.type]} /></button></li>)}
           </ol>
           {progress.crown && <p className="row text-sm" style={{ color: 'var(--accent)' }}><CrownIcon /> Krone: alle Runden perfekt</p>}
         </Card>
-        {progress.nextPart > 0 && <Button block variant="ghost" data-testid="lesson-reset" onClick={() => setConfirmReset(true)}>Lektion von vorn beginnen</Button>}
+        {progress.nextPart > 0 && <Button block variant="ghost" data-testid="lesson-reset" onClick={() => setConfirmReset(true)}>Teil von vorn beginnen</Button>}
       </main>
       <Modal open={confirmReset} title="Von vorn beginnen?" onClose={() => setConfirmReset(false)} actions={<><Button variant="danger" data-testid="lesson-reset-yes" onClick={reset}>Ja, zurücksetzen</Button><Button variant="ghost" onClick={() => setConfirmReset(false)}>Abbrechen</Button></>}>
-        <p className="text-sm muted">Sterne und Krone dieser Lektion werden gelöscht, die fünf Sätze starten wieder bei Runde 1.</p>
+        <p className="text-sm muted">Sterne und Krone dieses Teils werden gelöscht, die Sätze starten wieder bei Runde 1.</p>
       </Modal>
     </>
   );
@@ -152,7 +152,7 @@ export function LessonScreen() {
       <AppBar title={title} />
       <main className="page stack">
         <Card accent>
-          <div className="result">{phase.crown ? <span className="crown-big"><CrownIcon /></span> : <StarIcon />}<div className="h2">{phase.crown ? 'Krone! Alles perfekt.' : `${phase.total} von ${MAX_STARS} Sternen`}</div><p className="text-sm muted">{phase.crown ? 'Diese fünf Sätze sitzen.' : 'Runden mit weniger als drei Sternen kannst du wiederholen.'}</p></div>
+          <div className="result">{phase.crown ? <span className="crown-big"><CrownIcon /></span> : <StarIcon />}<div className="h2">{phase.crown ? 'Krone! Alles perfekt.' : `${phase.total} von ${MAX_STARS} Sternen`}</div><p className="text-sm muted">{phase.crown ? 'Diese Sätze sitzen.' : 'Runden mit weniger als drei Sternen kannst du wiederholen.'}</p></div>
         </Card>
         <Button block onClick={() => nav(`/t/${testId}`)}>Zurück zum Test</Button>
       </main>

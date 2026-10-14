@@ -10,6 +10,7 @@ export interface Repository {
   listAllTests(): Promise<Test[]>;
   getTest(id: string): Promise<Test>;
   addTest(profileId: string, t: { name: string; langFrom: string; langTo: string; testDate: string | null }): Promise<Test>;
+  updateTest(id: string, p: Partial<Pick<Test, 'name' | 'testDate' | 'topics'>>): Promise<void>;
   listPhotos(testId: string): Promise<Photo[]>;
   /** uploads an already resized JPEG to the private bucket and records the row */
   addPhoto(test: Test, kind: PhotoKind, jpeg: Blob): Promise<Photo>;

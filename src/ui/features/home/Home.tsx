@@ -4,7 +4,7 @@ import { supabaseRepository as repo } from '../../../storage/supabaseRepository'
 import { computeStats, type SessionSummary } from '../../../domain/stats';
 import { UserMenu } from '../account/UserMenu';
 import type { Award, Profile, Test } from '../../../domain/types';
-import { AppBar, Button, Card, CrownIcon, EmptyState, FlameIcon, Input, List, ListItem, Modal, StarIcon, TestIcon, UserIcon, ClipboardCheckIcon, GraduationIcon, useToast } from '../../ds';
+import { AppBar, Button, Card, ColorIcon, CrownIcon, EmptyState, FlameIcon, Input, List, ListItem, Modal, StarIcon, TestIcon, UserIcon, ClipboardCheckIcon, GraduationIcon, useToast } from '../../ds';
 import { NewTestModal, testSub } from '../test/NewTestModal';
 
 /**
@@ -80,7 +80,7 @@ export function Home() {
               {tests.length === 0 ? (
                 <Card flat><EmptyState icon={<TestIcon />} title="Welcher Test steht an?" text="Lege den nächsten Vokabeltest an und fotografiere danach die Vokabelseiten." action={<Button data-testid="test-add" onClick={() => setNewTest(true)}>Neuen Test anlegen</Button>} /></Card>
               ) : (
-                <List>{tests.map((t) => <ListItem key={t.id} testId={`test-${t.id}`} lead={<TestIcon />} title={t.name} sub={testSub(t)} onClick={() => nav(`/t/${t.id}`)} />)}</List>
+                <List>{tests.map((t) => <ListItem key={t.id} testId={`test-${t.id}`} lead={<ColorIcon color="violet"><ClipboardCheckIcon /></ColorIcon>} title={t.name} sub={testSub(t)} onClick={() => nav(`/t/${t.id}`)} />)}</List>
               )}
             </>
           )
@@ -97,14 +97,14 @@ export function Home() {
               <List>
                 {profiles.map((p) => {
                   const pt = tests.filter((t) => t.profileId === p.id);
-                  return <ListItem key={p.id} testId={`profile-${p.id}`} lead={p.name.slice(0, 1).toUpperCase()} title={p.name} sub={`${pt.length === 1 ? '1 Test' : `${pt.length} Tests`}${p.email ? ` · ${p.email}` : ''}`} trail={<span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{starsOf(p.id)} <CrownIcon />{crownsOf(p.id)}</span>} onClick={() => nav(`/p/${p.id}`)} />;
+                  return <ListItem key={p.id} testId={`profile-${p.id}`} lead={<ColorIcon color={(['orange', 'green', 'blue', 'pink'] as const)[profiles.indexOf(p) % 4]}>{p.name.slice(0, 1).toUpperCase()}</ColorIcon>} title={p.name} sub={`${pt.length === 1 ? '1 Test' : `${pt.length} Tests`}${p.email ? ` · ${p.email}` : ''}`} trail={<span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{starsOf(p.id)} <CrownIcon />{crownsOf(p.id)}</span>} onClick={() => nav(`/p/${p.id}`)} />;
                 })}
               </List>
             )}
             {tests.length > 0 && (
               <>
                 <h2 className="h2">Aktuelle Tests</h2>
-                <List>{tests.map((t) => <ListItem key={t.id} testId={`test-${t.id}`} lead={<TestIcon />} title={t.name} sub={testSub(t, profiles.find((p) => p.id === t.profileId)?.name)} onClick={() => nav(`/t/${t.id}`)} />)}</List>
+                <List>{tests.map((t) => <ListItem key={t.id} testId={`test-${t.id}`} lead={<ColorIcon color="violet"><ClipboardCheckIcon /></ColorIcon>} title={t.name} sub={testSub(t, profiles.find((p) => p.id === t.profileId)?.name)} onClick={() => nav(`/t/${t.id}`)} />)}</List>
               </>
             )}
             <Button variant="ghost" block onClick={backup}>Backup (JSON) herunterladen</Button>
@@ -131,12 +131,12 @@ export function Home() {
 export function Stats({ sessions, awards }: { sessions: SessionSummary[]; awards: Award[] }) {
   const s = computeStats(sessions, awards);
   const tiles = [
-    { n: s.days, l: s.days === 1 ? 'Tag gelernt' : 'Tage gelernt', icon: <FlameIcon /> },
-    { n: s.partsDone, l: s.partsDone === 1 ? 'Teil geschafft' : 'Teile geschafft', icon: <GraduationIcon /> },
-    { n: s.answers, l: 'Aufgaben beantwortet', icon: <StarIcon /> },
-    { n: s.mocks, l: s.mocks === 1 ? 'Probetest geschrieben' : 'Probetests geschrieben', icon: <ClipboardCheckIcon /> },
+    { n: s.days, l: s.days === 1 ? 'Tag gelernt' : 'Tage gelernt', icon: <ColorIcon color="orange"><FlameIcon /></ColorIcon> },
+    { n: s.partsDone, l: s.partsDone === 1 ? 'Teil geschafft' : 'Teile geschafft', icon: <ColorIcon color="green"><GraduationIcon /></ColorIcon> },
+    { n: s.answers, l: 'Aufgaben beantwortet', icon: <ColorIcon color="yellow"><StarIcon /></ColorIcon> },
+    { n: s.mocks, l: s.mocks === 1 ? 'Probetest geschrieben' : 'Probetests geschrieben', icon: <ColorIcon color="blue"><ClipboardCheckIcon /></ColorIcon> },
   ];
   const shown = tiles.filter((t) => t.n > 0); // accomplishments appear once they exist
   if (shown.length === 0) return null;
-  return <div className="stats" data-testid="stats">{shown.map((t) => <div key={t.l} className="stat"><span className="stat-icon">{t.icon}</span><div><div className="stat-n">{t.n}</div><div className="stat-l">{t.l}</div></div></div>)}</div>;
+  return <div className="stats" data-testid="stats">{shown.map((t) => <div key={t.l} className="stat">{t.icon}<div><div className="stat-n">{t.n}</div><div className="stat-l">{t.l}</div></div></div>)}</div>;
 }

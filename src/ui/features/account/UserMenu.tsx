@@ -3,7 +3,7 @@ import { supabase, supabaseRepository as repo } from '../../../storage/supabaseR
 import type { Role } from '../../../domain/types';
 import { Badge, Button, Input, Modal, UserIcon, useToast } from '../../ds';
 
-/** Top-right account button: icon with the name below. Opens a sheet with name, e-mail, e-mail change and logout. */
+/** Top-right account button: icon only. Opens a sheet with name, e-mail, e-mail change and logout. */
 export function UserMenu({ name, role, onNameChange }: { name: string; role: Role | null; onNameChange?: () => void }) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -36,7 +36,6 @@ export function UserMenu({ name, role, onNameChange }: { name: string; role: Rol
     <>
       <button type="button" className="usermenu" data-testid="usermenu" aria-label="Konto" onClick={() => setOpen(true)}>
         <span className="usermenu-icon"><UserIcon /></span>
-        <span className="usermenu-name">{name}</span>
       </button>
       <Modal open={open} title="Dein Konto" onClose={() => setOpen(false)} actions={<Button variant="ghost" onClick={() => setOpen(false)}>Schließen</Button>}>
         <div className="stack-sm">

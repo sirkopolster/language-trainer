@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Profile, Test } from '../../../domain/types';
-import { AppBar, BackIcon, Button, Card, EmptyState, Input, List, ListItem, Modal, TestIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, ColorIcon, EmptyState, Input, List, ListItem, Modal, TestIcon, useToast } from '../../ds';
 import { NewTestModal, testSub } from '../test/NewTestModal';
 import { Stats } from '../home/Home';
 import type { Award } from '../../../domain/types';
@@ -66,7 +66,7 @@ export function ProfileScreen() {
           <>
             <List>
               {tests.map((t) => (
-                <ListItem key={t.id} lead={<TestIcon />} title={t.name} sub={testSub(t)} onClick={() => nav(`/t/${t.id}`)} />
+                <ListItem key={t.id} lead={<ColorIcon color="violet"><ClipboardCheckIcon /></ColorIcon>} title={t.name} sub={testSub(t)} onClick={() => nav(`/t/${t.id}`)} />
               ))}
             </List>
             <Button variant="secondary" block data-testid="test-add" onClick={() => setAdding(true)}>Weiterer Test</Button>

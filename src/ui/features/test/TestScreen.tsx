@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Award, Test, Unit, Word } from '../../../domain/types';
 import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
-import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, CrownIcon, EmptyState, FileTextIcon, GraduationIcon, List, ListItem, Modal, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, CrownIcon, EmptyState, FileTextIcon, GraduationIcon, Input, List, ListItem, Modal, PencilIcon, StarIcon, TabBar, TestIcon, useToast } from '../../ds';
 import { SettingsTab } from './SettingsTab';
 
 type Tab = 'lernen' | 'probetest' | 'einstellungen';
@@ -19,6 +19,15 @@ export function TestScreen() {
   const [learn, setLearn] = useState<{ active: number; due: number } | null>(null);
   const [lessons, setLessons] = useState<{ units: Unit[]; words: Word[]; awards: Award[] } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [rename, setRename] = useState<string | null>(null);
+
+  async function saveName() {
+    const n = (rename ?? '').trim();
+    if (!n || !test) return;
+    try { await repo.updateTest(testId, { name: n }); setTest({ ...test, name: n }); toast('Name geändert', 'good', 1500); }
+    catch (e) { toast((e as Error).message, 'bad'); }
+    setRename(null);
+  }
 
   const load = () => Promise.all([repo.listWords(testId), repo.listWordStates(testId), repo.listUnits(testId)]).then(async ([w, st, units]) => {
     const t = test ?? (await repo.getTest(testId));
@@ -47,7 +56,7 @@ export function TestScreen() {
 
   return (
     <>
-      <AppBar title={test?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav('/')}><BackIcon /></button>} />
+      <AppBar title={test?.name ?? '…'} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav('/')}><BackIcon /></button>} right={<button className="iconbtn" data-testid="test-rename" aria-label="Test umbenennen" onClick={() => setRename(test?.name ?? '')}><PencilIcon /></button>} />
       <main className="page stack" style={{ paddingBottom: 'calc(var(--s-5) * 3)' }}>
         {tab === 'einstellungen' && test && lessons && <SettingsTab test={test} words={lessons.words} onTestChange={setTest} onWordsChange={load} />}
         {tab === 'lernen' && lessons && (
@@ -88,6 +97,9 @@ export function TestScreen() {
         )}
       </main>
       {tab && <TabBar tabs={TABS} active={tab} onSelect={setTab} />}
+      <Modal open={rename !== null} title="Test umbenennen" onClose={() => setRename(null)} actions={<><Button data-testid="test-rename-save" onClick={saveName} disabled={!(rename ?? '').trim()}>Speichern</Button><Button variant="ghost" onClick={() => setRename(null)}>Abbrechen</Button></>}>
+        <Input label="Name" value={rename ?? ''} onChange={(e) => setRename(e.target.value)} autoFocus />
+      </Modal>
       <Modal open={confirmReset} title="Alles zurücksetzen?" onClose={() => setConfirmReset(false)} actions={<><Button variant="danger" data-testid="reset-all-yes" onClick={resetAll}>Ja, alles löschen</Button><Button variant="ghost" onClick={() => setConfirmReset(false)}>Abbrechen</Button></>}>
         <p className="text-sm muted">Alle Sterne, Kronen und Lernstände dieses Tests werden gelöscht. Die Sätze und Fotos bleiben.</p>
       </Modal>

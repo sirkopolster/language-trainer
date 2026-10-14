@@ -77,12 +77,12 @@ export function SettingsTab({ test, words, onTestChange, onWordsChange }: { test
 
   return (
     <>
-      <h2 className="h2">1 · Testinhalte hochladen</h2>
+      <h2 className="h2">Schritt 1: Testinhalte hochladen</h2>
       {SECTIONS.map((s) => (
         <PhotoSection key={s.kind} {...s} photos={photos.filter((p) => p.kind === s.kind)} urls={urls} busy={pending.kind === s.kind ? pending.n : 0} extracting={extracting} onFiles={(f) => upload(s.kind, f)} onRemove={remove} onExtract={() => extract(s.kind)} />
       ))}
 
-      <h2 className="h2">2 · Das kommt im Test dran</h2>
+      <h2 className="h2">Schritt 2: Das kommt im Test dran</h2>
       <Card>
         <div className="stack-sm">
           {topics.length === 0 && <p className="text-sm muted">Noch nichts eingetragen. Nach dem Auswerten des Beispieltests schlägt die App Themen vor, du kannst sie hier ändern.</p>}
@@ -99,7 +99,7 @@ export function SettingsTab({ test, words, onTestChange, onWordsChange }: { test
         </div>
       </Card>
 
-      <h2 className="h2">3 · Vokabeln und Sätze</h2>
+      <h2 className="h2">Schritt 3: Vokabeln und Sätze prüfen</h2>
       <Card>
         <div className="row">
           <ListIcon />

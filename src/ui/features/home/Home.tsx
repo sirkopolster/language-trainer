@@ -71,7 +71,7 @@ export function Home() {
             <Card flat><EmptyState icon={<UserIcon />} title="Wie heißt du?" text="Nur dein Vorname, mehr braucht es nicht." action={<Button data-testid="profile-add" onClick={() => setNaming(true)}>Namen eingeben</Button>} /></Card>
           ) : (
             <>
-              <p className="h2" style={{ margin: 0 }}>Hallo {me.name}, schön, dass du wieder da bist.</p>
+              <h1 className="hello">Hi <span className="hello-name">{me.name}</span>, schön, dass du da bist</h1>
               <Stats sessions={sessions} awards={awards.filter((a) => a.profileId === me.id)} />
               <div className="row-between">
                 <h2 className="h2">Aktuelle Tests</h2>
@@ -86,7 +86,7 @@ export function Home() {
           )
         ) : (
           <>
-            <p className="h2" style={{ margin: 0 }}>Hallo {accountName}, schön, dass du wieder da bist.</p>
+            <h1 className="hello">Hi <span className="hello-name">{accountName}</span>, schön, dass du da bist</h1>
             <div className="row-between">
               <h2 className="h2">Kinder</h2>
               <Button small data-testid="kid-add" onClick={() => setKid({ name: '', email: '', password: '' })}>Neues Kind</Button>
@@ -136,5 +136,7 @@ export function Stats({ sessions, awards }: { sessions: SessionSummary[]; awards
     { n: s.answers, l: 'Aufgaben beantwortet', icon: <StarIcon /> },
     { n: s.mocks, l: s.mocks === 1 ? 'Probetest geschrieben' : 'Probetests geschrieben', icon: <ClipboardCheckIcon /> },
   ];
-  return <div className="stats" data-testid="stats">{tiles.map((t) => <div key={t.l} className="stat"><span className="stat-icon">{t.icon}</span><div><div className="stat-n">{t.n}</div><div className="stat-l">{t.l}</div></div></div>)}</div>;
+  const shown = tiles.filter((t) => t.n > 0); // accomplishments appear once they exist
+  if (shown.length === 0) return null;
+  return <div className="stats" data-testid="stats">{shown.map((t) => <div key={t.l} className="stat"><span className="stat-icon">{t.icon}</span><div><div className="stat-n">{t.n}</div><div className="stat-l">{t.l}</div></div></div>)}</div>;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, supabaseRepository as repo } from '../../../storage/supabaseRepository';
 import type { Role } from '../../../domain/types';
-import { Button, Input, Modal, UserIcon, useToast } from '../../ds';
+import { Badge, Button, Input, Modal, UserIcon, useToast } from '../../ds';
 
 /** Top-right account button: icon with the name below. Opens a sheet with name, e-mail, e-mail change and logout. */
 export function UserMenu({ name, role, onNameChange }: { name: string; role: Role | null; onNameChange?: () => void }) {
@@ -40,7 +40,7 @@ export function UserMenu({ name, role, onNameChange }: { name: string; role: Rol
       </button>
       <Modal open={open} title="Dein Konto" onClose={() => setOpen(false)} actions={<Button variant="ghost" onClick={() => setOpen(false)}>Schließen</Button>}>
         <div className="stack-sm">
-          <div className="row"><span className="usermenu-icon usermenu-icon-lg"><UserIcon /></span><div className="grow"><div className="h3">{name}</div><div className="text-sm muted" data-testid="account-email">{email}</div><div className="text-sm muted" data-testid="account-role">Rolle: {role === 'admin' ? 'Eltern (Admin)' : 'Kind'}</div></div></div>
+          <div className="row"><span className="usermenu-icon usermenu-icon-lg"><UserIcon /></span><div className="grow"><div className="h3">{name}</div><div className="text-sm muted" data-testid="account-email">{email}</div><div className="row" style={{ marginTop: 4 }} data-testid="account-role">{(role === 'admin' ? ['Eltern', 'Admin'] : ['Free']).map((r) => <Badge key={r} tone={r === 'Admin' ? 'primary' : r === 'Eltern' ? 'good' : 'neutral'}>{r}</Badge>)}</div></div></div>
           {role === 'admin' && (<><Input label="Name ändern" autoComplete="off" value={newName} onChange={(e) => setNewName(e.target.value)} /><Button block variant="secondary" disabled={busy || !newName.trim()} onClick={changeName}>Name speichern</Button></>)}
           <Input label="Neue E-Mail" type="email" autoComplete="off" hint="Du bekommst einen Bestätigungslink an die neue Adresse." value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
           <Button block variant="secondary" disabled={busy || !newEmail.includes('@')} onClick={changeEmail}>E-Mail ändern</Button>

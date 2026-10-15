@@ -19,17 +19,22 @@ const SECTION_LABEL: Record<string, string> = { translate: 'Übersetzen', gap: '
  * translate → write, gap → gaps without letters, choice/match → choice; other is skipped. Always the test direction.
  */
 export function buildMock(format: TestFormat, words: Word[], rng: () => number = Math.random): MockItem[] {
-  const active = words.filter((w) => w.status === 'active');
-  if (active.length === 0) return [];
-  let pool = shuffle(active, rng);
-  const next = () => { if (pool.length === 0) pool = shuffle(active, rng); return pool.pop()!; };
+  const vocab = words.filter((w) => w.status === 'active' && (w.kind ?? 'vocab') === 'vocab');
+  const tense = words.filter((w) => w.status === 'active' && w.kind === 'tense');
+  if (vocab.length === 0) return [];
+  let pool = shuffle(vocab, rng);
+  const next = () => { if (pool.length === 0) pool = shuffle(vocab, rng); return pool.pop()!; };
+  let tpool = shuffle(tense, rng);
+  const nextTense = () => { if (tpool.length === 0) tpool = shuffle(tense, rng); return tpool.pop()!; };
   const out: MockItem[] = [];
   for (const s of format.sections) {
     if (s.type === 'other' || s.items <= 0) continue;
     const per = s.points / s.items;
     for (let i = 0; i < s.items; i++) {
-      const word = next();
-      const ex = s.type === 'translate' ? makeWrite(word) : s.type === 'gap' ? makeGaps(word, false, rng) : makeChoice(word, active, rng);
+      // a choice task about verb forms uses the tense pairs when the test has Spezialteil A
+      const useTense = s.type !== 'translate' && s.type !== 'gap' && tense.length > 0;
+      const word = useTense ? nextTense() : next();
+      const ex = s.type === 'translate' ? makeWrite(word) : s.type === 'gap' ? makeGaps(word, false, rng) : makeChoice(word, useTense ? tense : vocab, rng);
       out.push({ word, ex, points: per, section: s.label ?? SECTION_LABEL[s.type] });
     }
   }

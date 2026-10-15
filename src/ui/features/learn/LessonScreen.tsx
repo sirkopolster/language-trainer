@@ -118,7 +118,7 @@ export function LessonScreen() {
           <details className="collapse" open={wide || showWords} onToggle={(e) => { if (!wide) setShowWords((e.target as HTMLDetailsElement).open); }}>
             <summary>{wide ? `${lesson.words.length} Sätze` : <>{lesson.words.length} Sätze anzeigen<span className="chev"><Chevron /></span></>}</summary>
             <ul className="pairs">
-              {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span></li>)}
+              {lesson.words.map((w) => <li key={w.id}><span className="pair-de">{w.source}</span><span className="pair-en">{w.target}</span>{w.kind && w.kind !== 'vocab' && w.example && <span className="text-xs muted">{w.example}</span>}</li>)}
             </ul>
           </details>
           </div>

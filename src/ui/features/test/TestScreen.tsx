@@ -4,6 +4,7 @@ import { supabaseRepository as repo } from '../../../storage/supabaseRepository'
 import type { Award, Test, Unit, Word } from '../../../domain/types';
 import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
 import { readiness } from '../../../domain/mock';
+import { SPECIAL, type SpecialKind } from '../../../domain/grammar';
 import { fmtDate } from './NewTestModal';
 import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, ColorIcon, CrownIcon, EddieSays, EmptyState, FileTextIcon, GraduationIcon, List, ListItem, Modal, PencilIcon, RocketIcon, SproutIcon, StarIcon, TabBar, TestIcon, TrophyIcon, useToast } from '../../ds';
 import { SettingsTab } from './SettingsTab';
@@ -24,6 +25,14 @@ export function TestScreen() {
   const [lessons, setLessons] = useState<{ units: Unit[]; words: Word[]; awards: Award[] } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [rename, setRename] = useState<string | null>(null);
+  const [building, setBuilding] = useState<SpecialKind | null>(null);
+
+  async function buildSpecial(kind: SpecialKind) {
+    setBuilding(kind);
+    try { const r = await repo.generateSpecial(testId, kind); toast(`${SPECIAL[kind].label}: ${r.pairs} Satzpaare`, 'good'); await load(); }
+    catch (e) { toast((e as Error).message, 'bad'); }
+    setBuilding(null);
+  }
 
   async function saveName() {
     const n = (rename ?? '').trim();
@@ -84,7 +93,7 @@ export function TestScreen() {
                   </div><Button data-testid="learn" onClick={() => nav(`/t/${testId}/learn`)}>Wiederholen</Button></div>
                 </Card>
               )}
-              {lessons.units.map((u) => {
+              {[...lessons.units].sort((a, b) => a.sort - b.sort).map((u) => {
                 const ls = allLessons.filter((l) => l.unitId === u.id);
                 if (!ls.length) return null;
                 return (
@@ -98,6 +107,16 @@ export function TestScreen() {
                   </Card>
                 );
               })}
+              <Card title="Spezialteile">
+                <p className="text-sm muted">Eddie baut aus deinen Sätzen Extra-Übungen. Nur Sätze, deren Verben dafür taugen.</p>
+                <List>
+                  {(['tense', 'negation'] as SpecialKind[]).map((k) => {
+                    const u = lessons.units.find((x) => x.kind === k);
+                    const n = u ? lessons.words.filter((w) => w.unitId === u.id).length : 0;
+                    return <ListItem key={k} lead={<ColorIcon color={k === 'tense' ? 'pink' : 'blue'}>{k === 'tense' ? 'A' : 'B'}</ColorIcon>} title={SPECIAL[k].title} sub={u ? `${n} Satzpaare · oben als ${SPECIAL[k].label}` : 'noch nicht erstellt'} trail={<Button small variant={u ? 'secondary' : 'primary'} data-testid={`special-${k}`} disabled={building !== null} onClick={() => buildSpecial(k)}>{building === k ? 'Eddie denkt…' : u ? 'Neu erstellen' : 'Erstellen'}</Button>} />;
+                  })}
+                </List>
+              </Card>
               {lessons.awards.length > 0 && <Button block variant="ghost" data-testid="reset-all" onClick={() => setConfirmReset(true)}>Gesamten Lernfortschritt löschen</Button>}
             </>
           )

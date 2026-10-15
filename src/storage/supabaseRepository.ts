@@ -7,8 +7,8 @@ export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string
 type ProfileRow = { id: string; user_id: string; admin_id: string | null; name: string; email: string | null; settings: { keep_photos?: boolean }; created_at: string };
 type TestRow = { id: string; profile_id: string; name: string; lang_from: string; lang_to: string; test_date: string | null; format: Test['format']; topics: string[] | null; status: Test['status']; created_at: string };
 
-type UnitRow = { id: string; test_id: string; label: string; sort: number };
-type WordRow = { id: string; unit_id: string; source: string; target: string; example: string | null; priority: boolean; status: Word['status'] };
+type UnitRow = { id: string; test_id: string; label: string; sort: number; kind: Unit['kind'] };
+type WordRow = { id: string; unit_id: string; source: string; target: string; example: string | null; priority: boolean; status: Word['status']; units?: { kind?: Unit['kind'] } };
 type StateRow = { word_id: string; box: number; due_at: string; streak: number; lapses: number; last_result: boolean | null };
 type AwardRow = { id: string; profile_id: string; kind: Award['kind']; ref_id: string | null; ref: string; value: number; awarded_at: string };
 type PhotoRow = { id: string; test_id: string; kind: Photo['kind']; storage_path: string; status: Photo['status']; created_at: string };
@@ -22,8 +22,8 @@ const callAdmin = async (body: Record<string, unknown>) => {
 };
 const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name: r.name, langFrom: r.lang_from, langTo: r.lang_to, testDate: r.test_date, format: r.format, topics: r.topics ?? null, status: r.status, createdAt: r.created_at });
 
-const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort });
-const toWord = (r: WordRow): Word => ({ id: r.id, unitId: r.unit_id, source: r.source, target: r.target, example: r.example, priority: r.priority, status: r.status });
+const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort, kind: r.kind ?? 'vocab' });
+const toWord = (r: WordRow): Word => ({ id: r.id, unitId: r.unit_id, source: r.source, target: r.target, example: r.example, priority: r.priority, status: r.status, kind: r.units?.kind ?? 'vocab' });
 const toState = (r: StateRow): WordState => ({ wordId: r.word_id, box: r.box, dueAt: r.due_at, streak: r.streak, lapses: r.lapses, lastResult: r.last_result });
 const toAward = (r: AwardRow): Award => ({ id: r.id, profileId: r.profile_id, kind: r.kind, refId: r.ref_id, ref: r.ref, value: r.value, awardedAt: r.awarded_at });
 const toPhoto = (r: PhotoRow): Photo => ({ id: r.id, testId: r.test_id, kind: r.kind, storagePath: r.storage_path, status: r.status, createdAt: r.created_at });
@@ -80,7 +80,7 @@ export const supabaseRepository: Repository = {
     return (data as UnitRow[]).map(toUnit);
   },
   async listAllWords() {
-    const { data, error } = await supabase.from('words').select('*');
+    const { data, error } = await supabase.from('words').select('*, units!inner(kind)');
     fail(error);
     return (data as WordRow[]).map(toWord);
   },
@@ -175,13 +175,19 @@ export const supabaseRepository: Repository = {
     if (data?.error) throw new Error(data.error);
     return data;
   },
+  async generateSpecial(testId, kind) {
+    const { data, error } = await supabase.functions.invoke('grammar', { body: { testId, kind } });
+    if (error) { const b = await (error as { context?: Response }).context?.json?.().catch(() => null); throw new Error(b?.error ?? 'Spezialteil konnte nicht erstellt werden'); }
+    if (data?.error) throw new Error(data.error);
+    return data;
+  },
   async listUnits(testId) {
     const { data, error } = await supabase.from('units').select('*').eq('test_id', testId).order('sort');
     fail(error);
     return (data as UnitRow[]).map(toUnit);
   },
   async listWords(testId) {
-    const { data, error } = await supabase.from('words').select('*, units!inner(test_id)').eq('units.test_id', testId).order('created_at');
+    const { data, error } = await supabase.from('words').select('*, units!inner(test_id, kind)').eq('units.test_id', testId).order('created_at');
     fail(error);
     return (data as WordRow[]).map(toWord);
   },

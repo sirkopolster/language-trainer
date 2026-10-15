@@ -36,6 +36,8 @@ export interface Repository {
   /** Edge Function `extract`: one photo → words in review / test format */
   extractPhoto(photoId: string): Promise<{ kind: 'vocab'; unit: string; words: number } | { kind: 'test'; sections: number; totalPoints: number }>;
   listUnits(testId: string): Promise<Unit[]>;
+  /** Edge Function `grammar`: builds Spezialteil A (tense) or B (negation) from the test's sentences */
+  generateSpecial(testId: string, kind: 'tense' | 'negation'): Promise<{ pairs: number }>;
   listWords(testId: string): Promise<Word[]>;
   updateWord(id: string, p: Partial<Pick<Word, 'source' | 'target' | 'example' | 'priority' | 'unitId'>>): Promise<void>;
   deleteWord(id: string): Promise<void>;

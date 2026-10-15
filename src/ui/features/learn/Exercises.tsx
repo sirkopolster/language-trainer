@@ -1,10 +1,21 @@
 import { useState, type FormEvent } from 'react';
 import type { Choice, Exercise, Gaps, Tiles, Write } from '../../../domain/exercises';
 import { fillGaps, isPunct, joinTokens } from '../../../domain/exercises';
+import { SPECIAL } from '../../../domain/grammar';
 import { Button, BulbIcon } from '../../ds';
 
 /** What to do, in the learner's words: replaces direction labels. */
 export function instruction(ex: Exercise): string {
+  if (ex.kind === 'tense' || ex.kind === 'negation') {
+    const s = SPECIAL[ex.kind];
+    const goal = ex.dir === 'de-en' ? s.forward : s.backward;
+    switch (ex.type) {
+      case 'choice': return `${goal} Welcher Satz ist richtig?`;
+      case 'tiles': return `${goal} Baue ihn aus den Bausteinen.`;
+      case 'gaps': return `${goal} Fülle die Lücken.`;
+      default: return `${goal} Schreib den ganzen Satz.`;
+    }
+  }
   const lang = ex.dir === 'en-de' ? 'deutsch' : 'englisch';
   const Lang = ex.dir === 'en-de' ? 'Deutsch' : 'Englisch';
   switch (ex.type) {

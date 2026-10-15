@@ -16,10 +16,12 @@ export type PhotoKind = 'vocab' | 'test';
 export type PhotoStatus = 'uploaded' | 'extracted' | 'failed' | 'deleted';
 export interface Photo { id: string; testId: string; kind: PhotoKind; storagePath: string; status: PhotoStatus; createdAt: string }
 
-export interface Unit { id: string; testId: string; label: string; sort: number }
+export type UnitKind = 'vocab' | 'tense' | 'negation';
+export interface Unit { id: string; testId: string; label: string; sort: number; kind: UnitKind }
 
 export type WordStatus = 'review' | 'active' | 'retired';
-export interface Word { id: string; unitId: string; source: string; target: string; example: string | null; priority: boolean; status: WordStatus }
+/** kind mirrors the unit: vocab = DE↔EN pair, tense = present↔past, negation = positive↔negative (then source/target are both English, example = German) */
+export interface Word { id: string; unitId: string; source: string; target: string; example: string | null; priority: boolean; status: WordStatus; kind?: UnitKind }
 
 export interface WordState { wordId: string; box: number; dueAt: string; streak: number; lapses: number; lastResult: boolean | null }
 

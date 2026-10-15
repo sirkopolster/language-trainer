@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
-import type { Profile, Test } from '../../../domain/types';
-import { AppBar, Button, Card, ClipboardCheckIcon, ColorIcon, EmptyState, Input, List, ListItem, Modal, TestIcon, useToast } from '../../ds';
-import { NewTestModal, testSub } from '../test/NewTestModal';
+import type { Award, Profile, Test, Unit, Word } from '../../../domain/types';
+import { AppBar, Button, Card, EmptyState, Input, Modal, TestIcon, useToast } from '../../ds';
+import { NewTestModal } from '../test/NewTestModal';
+import { TestCard, testProgress } from '../test/TestCard';
 import { Stats } from '../home/Home';
-import type { Award } from '../../../domain/types';
 import type { SessionSummary } from '../../../domain/stats';
 
-/** S1: a student's tests. One test = one learning goal (e.g. "Vokabeltest Unit 4"). */
+/** One learner: every test the viewer can see (the family's tests), each with THIS learner's results (D-021). */
 export function ProfileScreen() {
   const { profileId = '' } = useParams();
   const nav = useNavigate();
   const toast = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [tests, setTests] = useState<Test[] | null>(null);
+  const [data, setData] = useState<{ units: Unit[]; words: Word[]; awards: Award[]; sessions: SessionSummary[]; profiles: Profile[] } | null>(null);
   const [adding, setAdding] = useState(false);
   const [edit, setEdit] = useState<{ name: string; email: string; password: string } | null>(null);
   const [role, setRole] = useState<'admin' | 'student'>('student');
@@ -45,7 +46,7 @@ export function ProfileScreen() {
     setBusy(false);
   }
 
-  const load = () => repo.listTests(profileId).then(setTests).catch((e: Error) => toast(e.message, 'bad'));
+  const load = () => Promise.all([repo.listAllTests(), repo.listAllUnits(), repo.listAllWords(), repo.listAllAwards(), repo.listAllSessions(), repo.listProfiles()]).then(([t, units, words, awards, sessions, profiles]) => { setTests(t); setData({ units, words, awards: awards.filter((a) => a.profileId === profileId), sessions: sessions.filter((s) => s.profileId === profileId), profiles }); }).catch((e: Error) => toast(e.message, 'bad'));
   useEffect(() => {
     repo.listProfiles().then((ps) => setProfile(ps.find((p) => p.id === profileId) ?? null));
     repo.getRole().then(setRole);
@@ -64,11 +65,10 @@ export function ProfileScreen() {
           </Card>
         ) : (
           <>
-            <List>
-              {tests.map((t) => (
-                <ListItem key={t.id} lead={<ColorIcon color="violet"><ClipboardCheckIcon /></ColorIcon>} title={t.name} sub={testSub(t)} onClick={() => nav(`/t/${t.id}`)} />
-              ))}
-            </List>
+            <p className="text-sm muted" style={{ margin: 0 }}>Ergebnisse von {profile?.name ?? '…'} je Test.</p>
+            <div className="stack-sm">
+              {tests.map((t) => <TestCard key={t.id} test={t} sub={t.profileId !== profileId ? `von ${data?.profiles.find((p) => p.id === t.profileId)?.name ?? '?'}` : undefined} progress={testProgress(t, data?.units ?? [], data?.words ?? [], data?.awards ?? [], data?.sessions ?? [])} onClick={() => nav(`/t/${t.id}`)} />)}
+            </div>
             <Button variant="secondary" block data-testid="test-add" onClick={() => setAdding(true)}>Weiterer Test</Button>
           </>
         )}

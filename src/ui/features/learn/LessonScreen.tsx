@@ -16,6 +16,13 @@ const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'wa
   wrong: { title: 'Noch nicht. So ist es richtig:', tone: 'bad' },
 };
 type Step = { word: Word; ex: Exercise; retry: boolean; dir: Direction };
+/** Eddie's words after a finished part, by outcome. One is picked at random. */
+const CHEER = {
+  crown: ['Wow, alle Runden perfekt! Du bist ein Erdmännchen-Profi.', 'Krone! Diese Sätze kann dir keiner mehr nehmen.', 'Perfekt bis zum letzten Satz. Ich bin richtig stolz auf dich!', 'Das war Champions-League. Weiter so!'],
+  great: ['Richtig stark! Noch ein paar Sterne und die Krone gehört dir.', 'Das sitzt fast perfekt. Beim nächsten Mal holst du dir die Krone.', 'Super gemacht! Ich hab jeden Satz mitgefiebert.'],
+  good: ['Teil geschafft, das ist das Wichtigste! Üben macht den Rest.', 'Gut gekämpft! Jede Runde bringt dich näher an den Test.', 'Ich seh Fortschritt! Morgen klappt noch mehr.', 'Fertig! Du hast mehr geschafft als du denkst.'],
+};
+const cheer = (crown: boolean, total: number) => { const pool = crown ? CHEER.crown : total >= 9 ? CHEER.great : CHEER.good; return pool[Math.floor(Math.random() * pool.length)]; };
 type Phase = { kind: 'plan' } | { kind: 'run'; part: number; queue: Step[]; done: number; mistakes: number; hints: number; feedback: Comparison | null; hintUsed: boolean } | { kind: 'partDone'; part: number; stars: number; mistakes: number; hints: number } | { kind: 'lessonDone'; crown: boolean; total: number };
 
 /** D-012 lesson: 5 sentences through Wählen → Bauen → Lücken → Lücken ohne Hilfe → Schreiben. Plan first, stars per part, crown when all parts are perfect. */
@@ -161,6 +168,7 @@ export function LessonScreen() {
     <>
       <AppBar title={title} />
       <main className="page stack">
+        <EddieSays>{cheer(phase.crown, phase.total)}</EddieSays>
         <Card accent>
           <div className="result">{phase.crown ? <span className="crown-big"><CrownIcon /></span> : <StarIcon />}<div className="h2">{phase.crown ? 'Krone! Alles perfekt.' : `${phase.total} von ${MAX_STARS} Sternen`}</div><p className="text-sm muted">{phase.crown ? 'Diese Sätze sitzen.' : 'Runden mit weniger als drei Sternen kannst du wiederholen.'}</p></div>
         </Card>

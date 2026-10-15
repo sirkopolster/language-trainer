@@ -45,12 +45,17 @@ export interface Repository {
   activateWords(testId: string): Promise<void>;
   /** removes the files from the bucket, keeps the rows with status deleted (D-004 default) */
   deletePhotoFiles(testId: string): Promise<void>;
-  listWordStates(testId: string): Promise<WordState[]>;
+  /** the learner's own profile (admins have one too), null before it is created */
+  getMyProfile(): Promise<Profile | null>;
+  /** states of one learner for one test */
+  listWordStates(testId: string, profileId: string): Promise<WordState[]>;
   listAwards(profileId: string): Promise<Award[]>;
   /** upsert on (profile, kind, unit, ref); keeps the better value */
   saveAward(a: Award): Promise<void>;
   /** lesson reset: removes its stars/crown and the ladder state of its sentences */
   resetLesson(profileId: string, unitId: string, n: number, wordIds: string[]): Promise<void>;
+  /** all learners' states (admin sees every child) for the result overview */
+  listAllWordStates(): Promise<WordState[]>;
   /** whole test: stars, crowns, ladder state and study sessions of its units */
   resetTestProgress(profileId: string, unitIds: string[], wordIds: string[]): Promise<void>;
   saveWordState(s: WordState): Promise<void>;

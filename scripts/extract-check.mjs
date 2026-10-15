@@ -39,6 +39,6 @@ try {
   const { data: words } = await sb.from('words').select('source, target, example, priority');
   console.table(words);
 } finally {
-  await sb.auth.signOut();
+  await sb.auth.signOut({ scope: 'local' }); // global sign-out would kill the browser session of the same QA user
   await qaCleanup();
 }

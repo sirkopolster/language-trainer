@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
-import type { Test, Word, WordState } from '../../../domain/types';
+import type { Profile, Test, Word, WordState } from '../../../domain/types';
 import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, composeSession, exerciseFor, requeueIndex, type SessionItem } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
@@ -25,6 +25,7 @@ export function LearnScreen() {
   const nav = useNavigate();
   const toast = useToast();
   const [test, setTest] = useState<Test | null>(null);
+  const [me, setMe] = useState<Profile | null>(null);
   const [pool, setPool] = useState<Word[]>([]);
   const [queue, setQueue] = useState<Step[] | null>(null);
   const [done, setDone] = useState<{ correct: number; total: number; climbed: number }>({ correct: 0, total: 0, climbed: 0 });
@@ -33,15 +34,15 @@ export function LearnScreen() {
   const [log, setLog] = useState<{ word_id: string; level: number; type: string; correct: boolean; typed: string }[]>([]);
 
   useEffect(() => {
-    Promise.all([repo.getTest(testId), repo.listWords(testId), repo.listWordStates(testId)]).then(([t, words, states]) => {
-      setTest(t);
+    repo.getMyProfile().then((my) => Promise.all([repo.getTest(testId), repo.listWords(testId), repo.listWordStates(testId, my?.id ?? '')]).then(([t, words, states]) => {
+      setTest(t); setMe(my);
       const active = words.filter((w) => w.status === 'active');
       setPool(active);
       const scope = unitId ? active.filter((w) => w.unitId === unitId) : active;
-      const items = composeSession(scope, new Map(states.map((s) => [s.wordId, s])), new Date(), { size, maxNew: 5 });
+      const items = composeSession(scope, new Map(states.map((s) => [s.wordId, s])), new Date(), { size, maxNew: 5 }).map((it) => ({ ...it, state: { ...it.state, profileId: my?.id ?? '' } }));
       // both directions in review too: alternate per item
       setQueue(items.map((item, i) => ({ item, ex: build(item, active, i % 2 ? 'de-en' : 'en-de'), retry: false })));
-    }).catch((e: Error) => toast(e.message, 'bad'));
+    })).catch((e: Error) => toast(e.message, 'bad'));
   }, [testId, unitId, size]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const step = queue?.[0];
@@ -73,7 +74,7 @@ export function LearnScreen() {
     }
     setFeedback(null);
     setQueue(rest);
-    if (rest.length === 0 && test) repo.addSession({ profileId: test.profileId, kind: 'study', unitId, startedAt: startedAt.toISOString(), items: log }).catch(() => undefined);
+    if (rest.length === 0 && test && me) repo.addSession({ profileId: me.id, kind: 'study', unitId, startedAt: startedAt.toISOString(), items: log }).catch(() => undefined);
   }
 
   if (queue === null) return <main className="page"><p className="muted text-sm">Lädt…</p></main>;

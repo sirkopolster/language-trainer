@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
-import type { Award, Test, Unit, Word } from '../../../domain/types';
+import type { Award, Profile, Test, Unit, Word, WordState } from '../../../domain/types';
 import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/lessons';
 import { readiness } from '../../../domain/mock';
 import { SPECIAL, type SpecialKind } from '../../../domain/grammar';
@@ -23,6 +23,8 @@ export function TestScreen() {
   const [learn, setLearn] = useState<{ active: number; due: number; secureShare: number } | null>(null);
   const [mocks, setMocks] = useState<{ startedAt: string; score: number; maxScore: number; passed: boolean }[]>([]);
   const [lessons, setLessons] = useState<{ units: Unit[]; words: Word[]; awards: Award[] } | null>(null);
+  const [me, setMe] = useState<Profile | null>(null);
+  const [others, setOthers] = useState<{ profile: Profile; awards: Award[]; states: WordState[]; mocks: number }[]>([]);
   const [confirmReset, setConfirmReset] = useState(false);
   const [rename, setRename] = useState<string | null>(null);
   const [building, setBuilding] = useState<SpecialKind | null>(null);
@@ -47,14 +49,19 @@ export function TestScreen() {
     ? <span className="title-edit"><span className="appbar-title" style={{ flex: '0 1 auto' }}>{test?.name ?? '…'}</span><button className="iconbtn" data-testid="test-rename" aria-label="Test umbenennen" onClick={() => setRename(test?.name ?? '')}><PencilIcon /></button></span>
     : <input className="title-input" data-testid="test-rename-input" value={rename} autoFocus aria-label="Name des Tests" onChange={(e) => setRename(e.target.value)} onBlur={saveName} onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setRename(null); }} />;
 
-  const load = () => Promise.all([repo.listWords(testId), repo.listWordStates(testId), repo.listUnits(testId)]).then(async ([w, st, units]) => {
-    const t = test ?? (await repo.getTest(testId));
-    setLessons({ units, words: w, awards: await repo.listAwards(t.profileId) });
+  const load = () => repo.getMyProfile().then((my) => Promise.all([repo.listWords(testId), repo.listWordStates(testId, my?.id ?? ''), repo.listUnits(testId)]).then(async ([w, st, units]) => {
+    setMe(my);
+    setLessons({ units, words: w, awards: my ? await repo.listAwards(my.id) : [] });
+    // every learner who touched this test (an admin sees the children, a child only itself)
+    const unitIds = new Set(units.map((u) => u.id));
+    const [profiles, allAwards, allStates, allSessions] = await Promise.all([repo.listProfiles(), repo.listAllAwards(), repo.listAllWordStates(), repo.listAllSessions()]);
+    const wordIds = new Set(w.map((x) => x.id));
+    setOthers(profiles.map((profile) => ({ profile, awards: allAwards.filter((a) => a.profileId === profile.id && (unitIds.has(a.refId ?? '') || a.refId === testId)), states: allStates.filter((x) => x.profileId === profile.id && wordIds.has(x.wordId)), mocks: allSessions.filter((x) => x.profileId === profile.id && x.kind === 'mock').length })).filter((o) => o.awards.length > 0 || o.states.length > 0));
     const now = new Date(); const states = new Map(st.map((s) => [s.wordId, s]));
     const active = w.filter((x) => x.status === 'active');
     const mk = await repo.listMocks(testId); setMocks(mk);
     setLearn({ active: active.length, due: active.filter((x) => { const s = states.get(x.id); return !s || (new Date(s.dueAt) <= now && !(s.box === 5 && s.lastResult)); }).length, secureShare: readiness(w, states, mk).share });
-  }).catch((e: Error) => toast(e.message, 'bad'));
+  })).catch((e: Error) => toast(e.message, 'bad'));
   useEffect(() => { repo.getTest(testId).then(setTest).catch((e: Error) => toast(e.message, 'bad')); load(); }, [testId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // default tab: Lernen as soon as sentences exist, Einstellungen before
@@ -62,9 +69,9 @@ export function TestScreen() {
   const setTab = (id: string) => setParams({ tab: id }, { replace: true });
 
   async function resetAll() {
-    if (!test || !lessons) return;
+    if (!test || !lessons || !me) return;
     try {
-      await repo.resetTestProgress(test.profileId, lessons.units.map((u) => u.id), lessons.words.map((w) => w.id));
+      await repo.resetTestProgress(me.id, lessons.units.map((u) => u.id), lessons.words.map((w) => w.id));
       toast('Lernfortschritt gelöscht', 'good');
       load();
     } catch (e) { toast((e as Error).message, 'bad'); }
@@ -107,6 +114,18 @@ export function TestScreen() {
                   </Card>
                 );
               })}
+              {others.length > 0 && (
+                <Card title="Wer lernt diesen Test?">
+                  <List>
+                    {others.map((o) => {
+                      const stars = o.awards.filter((a) => a.kind === 'star').reduce((n, a) => n + a.value, 0);
+                      const crowns = o.awards.filter((a) => a.kind === 'crown').length;
+                      const secure = o.states.filter((x) => x.box >= 3).length;
+                      return <ListItem key={o.profile.id} lead={<ColorIcon color={o.profile.own ? 'violet' : 'green'}>{o.profile.name.slice(0, 1).toUpperCase()}</ColorIcon>} title={`${o.profile.name}${o.profile.own ? ' (du)' : ''}`} sub={`${stars} Sterne · ${crowns} Kronen · ${secure} Sätze sicher · ${o.mocks} Probetests`} />;
+                    })}
+                  </List>
+                </Card>
+              )}
               <Card title="Spezialteile">
                 <p className="text-sm muted">Eddie baut aus deinen Sätzen Extra-Übungen. Nur Sätze, deren Verben dafür taugen.</p>
                 <List>

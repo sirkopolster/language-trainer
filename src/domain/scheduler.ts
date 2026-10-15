@@ -9,7 +9,7 @@ export const exerciseFor = (level: number): ExerciseType => (['choice', 'tiles',
 
 const DAY = 86_400_000;
 
-export const newState = (wordId: string, now: Date): WordState => ({ wordId, box: 0, dueAt: now.toISOString(), streak: 0, lapses: 0, lastResult: null });
+export const newState = (wordId: string, now: Date, profileId = ''): WordState => ({ wordId, profileId, box: 0, dueAt: now.toISOString(), streak: 0, lapses: 0, lastResult: null });
 export const isDue = (s: WordState, now: Date) => new Date(s.dueAt).getTime() <= now.getTime();
 
 /** Correct → one level up once the item has `priority ? 2 : 1` correct answers at this level. Wrong → one level down, due now. */

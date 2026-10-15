@@ -9,7 +9,7 @@ type TestRow = { id: string; profile_id: string; name: string; lang_from: string
 
 type UnitRow = { id: string; test_id: string; label: string; sort: number; kind: Unit['kind'] };
 type WordRow = { id: string; unit_id: string; source: string; target: string; example: string | null; priority: boolean; status: Word['status']; units?: { kind?: Unit['kind'] } };
-type StateRow = { word_id: string; box: number; due_at: string; streak: number; lapses: number; last_result: boolean | null };
+type StateRow = { word_id: string; profile_id: string; box: number; due_at: string; streak: number; lapses: number; last_result: boolean | null };
 type AwardRow = { id: string; profile_id: string; kind: Award['kind']; ref_id: string | null; ref: string; value: number; awarded_at: string };
 type PhotoRow = { id: string; test_id: string; kind: Photo['kind']; storage_path: string; status: Photo['status']; created_at: string };
 
@@ -24,7 +24,7 @@ const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name:
 
 const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort, kind: r.kind ?? 'vocab' });
 const toWord = (r: WordRow): Word => ({ id: r.id, unitId: r.unit_id, source: r.source, target: r.target, example: r.example, priority: r.priority, status: r.status, kind: r.units?.kind ?? 'vocab' });
-const toState = (r: StateRow): WordState => ({ wordId: r.word_id, box: r.box, dueAt: r.due_at, streak: r.streak, lapses: r.lapses, lastResult: r.last_result });
+const toState = (r: StateRow): WordState => ({ wordId: r.word_id, profileId: r.profile_id, box: r.box, dueAt: r.due_at, streak: r.streak, lapses: r.lapses, lastResult: r.last_result });
 const toAward = (r: AwardRow): Award => ({ id: r.id, profileId: r.profile_id, kind: r.kind, refId: r.ref_id, ref: r.ref, value: r.value, awardedAt: r.awarded_at });
 const toPhoto = (r: PhotoRow): Photo => ({ id: r.id, testId: r.test_id, kind: r.kind, storagePath: r.storage_path, status: r.status, createdAt: r.created_at });
 
@@ -220,8 +220,17 @@ export const supabaseRepository: Repository = {
     const up = await supabase.from('photos').update({ status: 'deleted' }).in('id', data.map((p) => p.id));
     fail(up.error);
   },
-  async listWordStates(testId) {
-    const { data, error } = await supabase.from('word_state').select('*, words!inner(unit_id, units!inner(test_id))').eq('words.units.test_id', testId);
+  async getMyProfile() {
+    const ps = await this.listProfiles();
+    return ps.find((p) => p.own) ?? null;
+  },
+  async listWordStates(testId, profileId) {
+    const { data, error } = await supabase.from('word_state').select('*, words!inner(unit_id, units!inner(test_id))').eq('words.units.test_id', testId).eq('profile_id', profileId);
+    fail(error);
+    return (data as StateRow[]).map(toState);
+  },
+  async listAllWordStates() {
+    const { data, error } = await supabase.from('word_state').select('*');
     fail(error);
     return (data as StateRow[]).map(toState);
   },
@@ -240,16 +249,16 @@ export const supabaseRepository: Repository = {
   async resetLesson(profileId, unitId, n, wordIds) {
     const a = await supabase.from('awards').delete().eq('profile_id', profileId).eq('ref_id', unitId).like('ref', `lesson:${n}%`);
     fail(a.error);
-    const s = await supabase.from('word_state').delete().in('word_id', wordIds);
+    const s = await supabase.from('word_state').delete().eq('profile_id', profileId).in('word_id', wordIds);
     fail(s.error);
   },
   async resetTestProgress(profileId, unitIds, wordIds) {
     if (unitIds.length) { const a = await supabase.from('awards').delete().eq('profile_id', profileId).in('ref_id', unitIds); fail(a.error); }
-    if (wordIds.length) { const s = await supabase.from('word_state').delete().in('word_id', wordIds); fail(s.error); }
+    if (wordIds.length) { const s = await supabase.from('word_state').delete().eq('profile_id', profileId).in('word_id', wordIds); fail(s.error); }
     if (unitIds.length) { const se = await supabase.from('sessions').delete().eq('profile_id', profileId).in('unit_id', unitIds); fail(se.error); }
   },
   async saveWordState(s) {
-    const { error } = await supabase.from('word_state').upsert({ word_id: s.wordId, box: s.box, due_at: s.dueAt, streak: s.streak, lapses: s.lapses, last_result: s.lastResult, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from('word_state').upsert({ word_id: s.wordId, profile_id: s.profileId, box: s.box, due_at: s.dueAt, streak: s.streak, lapses: s.lapses, last_result: s.lastResult, updated_at: new Date().toISOString() }, { onConflict: 'word_id,profile_id' });
     fail(error);
   },
   async addSession(s) {

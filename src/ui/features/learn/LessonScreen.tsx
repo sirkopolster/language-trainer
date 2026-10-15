@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
-import type { Award, Test, Word, WordState } from '../../../domain/types';
+import type { Award, Profile, Test, Word, WordState } from '../../../domain/types';
 import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, newState, requeueIndex } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
@@ -32,6 +32,7 @@ export function LessonScreen() {
   const nav = useNavigate();
   const toast = useToast();
   const [test, setTest] = useState<Test | null>(null);
+  const [me, setMe] = useState<Profile | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [pool, setPool] = useState<Word[]>([]);
   const [awards, setAwards] = useState<Award[]>([]);
@@ -44,8 +45,10 @@ export function LessonScreen() {
 
   useEffect(() => {
     repo.getTest(testId).then(async (t) => {
-      const [words, st, aw] = await Promise.all([repo.listWords(testId), repo.listWordStates(testId), repo.listAwards(t.profileId)]);
-      setTest(t); setPool(words.filter((w) => w.status === 'active')); setAwards(aw); setStates(new Map(st.map((s) => [s.wordId, s])));
+      const my = await repo.getMyProfile();
+      if (!my) throw new Error('Kein eigenes Profil');
+      const [words, st, aw] = await Promise.all([repo.listWords(testId), repo.listWordStates(testId, my.id), repo.listAwards(my.id)]);
+      setTest(t); setMe(my); setPool(words.filter((w) => w.status === 'active')); setAwards(aw); setStates(new Map(st.map((s) => [s.wordId, s])));
       setLesson(splitLessons(words).find((l) => l.unitId === unitId && l.n === n) ?? null);
     }).catch((e: Error) => toast(e.message, 'bad'));
   }, [testId, unitId, n]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -65,7 +68,7 @@ export function LessonScreen() {
     const c = step.ex.type === 'choice' ? (typed === step.ex.answer ? compare(typed, typed) : { ...compare(typed, step.ex.answer), result: 'wrong' as const, correct: false }) : compare(typed, step.ex.answer);
     setLog((l) => [...l, { word_id: step.word.id, part: PARTS[phase.part].type, correct: c.correct, typed, hint: phase.hintUsed }]);
     if (!step.retry) {
-      const prev = states.get(step.word.id) ?? newState(step.word.id, new Date());
+      const prev = states.get(step.word.id) ?? newState(step.word.id, new Date(), me?.id ?? '');
       // the ladder state follows the part: a correct answer at part k lifts the sentence to level k+1 at most
       const base = { ...prev, box: Math.min(prev.box, PARTS[phase.part].level) };
       const next = applyAnswer(base, c.correct, step.word.priority, new Date());
@@ -76,7 +79,7 @@ export function LessonScreen() {
   }
 
   function proceed() {
-    if (phase.kind !== 'run' || !phase.feedback || !lesson || !test) return;
+    if (phase.kind !== 'run' || !phase.feedback || !lesson || !test || !me) return;
     const step = phase.queue[0];
     const rest = phase.queue.slice(1);
     let done = phase.done;
@@ -87,7 +90,7 @@ export function LessonScreen() {
     else rest.splice(requeueIndex(rest.length), 0, { word: step.word, ex: build(step.word, PARTS[phase.part].type, pool, step.dir), retry: false, dir: step.dir });
     if (rest.length > 0) { setPhase({ ...phase, queue: rest, done, feedback: null, hintUsed: false }); return; }
     const stars = starsFor(phase.mistakes);
-    const star: Award = { id: '', profileId: test.profileId, kind: 'star', refId: unitId, ref: partRef(n, PARTS[phase.part].type), value: stars, awardedAt: new Date().toISOString() };
+    const star: Award = { id: '', profileId: me.id, kind: 'star', refId: unitId, ref: partRef(n, PARTS[phase.part].type), value: stars, awardedAt: new Date().toISOString() };
     const nextAwards = [...awards.filter((a) => !(a.kind === 'star' && a.refId === unitId && a.ref === star.ref)), star];
     const perfect = PARTS.every((p) => lessonProgress(nextAwards, unitId, n).stars[p.type] === 3);
     const crown: Award | null = phase.part === PARTS.length - 1 && perfect ? { ...star, kind: 'crown', ref: lessonRef(n), value: 1 } : null;
@@ -96,14 +99,14 @@ export function LessonScreen() {
     setAwards(nextAwards);
     setPhase({ kind: 'partDone', part: phase.part, stars, mistakes: phase.mistakes, hints: phase.hints });
     const items = log; setLog([]);
-    const save = async () => { await repo.saveAward(star); if (crown) await repo.saveAward(crown); await repo.addSession({ profileId: test.profileId, kind: 'study', unitId, startedAt: new Date().toISOString(), items }); };
+    const save = async () => { await repo.saveAward(star); if (crown) await repo.saveAward(crown); await repo.addSession({ profileId: me.id, kind: 'study', unitId, startedAt: new Date().toISOString(), items }); };
     save().catch((e: Error) => toast(e.message, 'bad'));
   }
 
   async function reset() {
-    if (!test || !lesson) return;
+    if (!test || !lesson || !me) return;
     try {
-      await repo.resetLesson(test.profileId, unitId, n, lesson.words.map((w) => w.id));
+      await repo.resetLesson(me.id, unitId, n, lesson.words.map((w) => w.id));
       setAwards((a) => a.filter((x) => !(x.refId === unitId && x.ref.startsWith(`lesson:${n}`))));
       setStates((m) => { const c = new Map(m); lesson.words.forEach((w) => c.delete(w.id)); return c; });
       toast('Teil zurückgesetzt', 'good');

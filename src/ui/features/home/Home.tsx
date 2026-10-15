@@ -29,11 +29,13 @@ export function Home() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [accountName, setAccountName] = useState('');
 
-  const load = () => Promise.all([repo.getRole(), repo.listProfiles(), repo.listAllTests(), repo.listAllAwards(), repo.listAllUnits(), repo.listAllWords(), repo.listAllSessions()]).then(async ([r, p, t, a, u, w, se]) => {
+  const load = (): Promise<void> => Promise.all([repo.getRole(), repo.listProfiles(), repo.listAllTests(), repo.listAllAwards(), repo.listAllUnits(), repo.listAllWords(), repo.listAllSessions()]).then(async ([r, p, t, a, u, w, se]): Promise<void> => {
     setRole(r); setProfiles(p); setTests(t); setAwards(a); setUnits(u); setWords(w); setSessions(se);
     const own = p.find((x) => x.own);
     const acc = await repo.getAccount();
     setAccountName(acc.name || own?.name || acc.email.split('@')[0]);
+    // an admin learns on an own profile too (D-021): create it once
+    if (r === 'admin' && !own && acc.name) { await repo.addProfile(acc.name).catch(() => undefined); return load(); }
   }).catch((e: Error) => toast(e.message, 'bad'));
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -96,14 +98,14 @@ export function Home() {
               <List>
                 {profiles.map((p) => {
                   const pt = tests.filter((t) => t.profileId === p.id);
-                  return <ListItem key={p.id} testId={`profile-${p.id}`} lead={<ColorIcon color={(['orange', 'green', 'blue', 'pink'] as const)[profiles.indexOf(p) % 4]}>{p.name.slice(0, 1).toUpperCase()}</ColorIcon>} title={p.name} sub={`${pt.length === 1 ? '1 Test' : `${pt.length} Tests`}${p.email ? ` · ${p.email}` : ''}`} trail={<span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{starsOf(p.id)} <CrownIcon />{crownsOf(p.id)}</span>} onClick={() => nav(`/p/${p.id}`)} />;
+                  return <ListItem key={p.id} testId={`profile-${p.id}`} lead={<ColorIcon color={(['orange', 'green', 'blue', 'pink'] as const)[profiles.indexOf(p) % 4]}>{p.name.slice(0, 1).toUpperCase()}</ColorIcon>} title={`${p.name}${p.own ? ' (du)' : ''}`} sub={`${pt.length === 1 ? '1 Test' : `${pt.length} Tests`}${p.email && !p.own ? ` · ${p.email}` : ''}`} trail={<span className="row text-sm" style={{ color: 'var(--accent)' }}><StarIcon />{starsOf(p.id)} <CrownIcon />{crownsOf(p.id)}</span>} onClick={() => nav(`/p/${p.id}`)} />;
                 })}
               </List>
             )}
             {tests.length > 0 && (
               <>
                 <h2 className="h2">Aktuelle Tests</h2>
-                <div className="stack-sm">{tests.map((t) => <TestCard key={t.id} test={t} sub={profiles.find((p) => p.id === t.profileId)?.name} progress={testProgress(t, units, words, awards, sessions)} onClick={() => nav(`/t/${t.id}`)} />)}</div>
+                <div className="stack-sm">{tests.map((t) => <TestCard key={t.id} test={t} sub={`von ${profiles.find((p) => p.id === t.profileId)?.name ?? '?'}`} progress={testProgress(t, units, words, me ? awards.filter((a) => a.profileId === me.id) : [], me ? sessions.filter((x) => x.profileId === me.id) : [])} onClick={() => nav(`/t/${t.id}`)} />)}</div>
               </>
             )}
             <Button variant="ghost" block onClick={backup}>Backup (JSON) herunterladen</Button>

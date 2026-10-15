@@ -23,7 +23,8 @@ export type WordStatus = 'review' | 'active' | 'retired';
 /** kind mirrors the unit: vocab = DE↔EN pair, tense = present↔past, negation = positive↔negative (then source/target are both English, example = German) */
 export interface Word { id: string; unitId: string; source: string; target: string; example: string | null; priority: boolean; status: WordStatus; kind?: UnitKind }
 
-export interface WordState { wordId: string; box: number; dueAt: string; streak: number; lapses: number; lastResult: boolean | null }
+/** one row per learner and sentence (D-021) */
+export interface WordState { wordId: string; profileId: string; box: number; dueAt: string; streak: number; lapses: number; lastResult: boolean | null }
 
 export interface Streak { profileId: string; current: number; longest: number; lastDay: string | null }
 /** refId = unit, ref = 'lesson:<n>:<part>' (star, value 0–3) or 'lesson:<n>' (crown) */

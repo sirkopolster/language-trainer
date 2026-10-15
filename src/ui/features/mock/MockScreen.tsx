@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabaseRepository as repo } from '../../../storage/supabaseRepository';
-import type { Award, Test, WordState } from '../../../domain/types';
+import type { Award, Profile, Test, WordState } from '../../../domain/types';
 import { buildMock, scoreMock, type MockItem, type MockResult } from '../../../domain/mock';
 import { newState } from '../../../domain/scheduler';
 import { AppBar, Button, Card, CloseIcon, EddieSays, ProgressBar, TrophyIcon, useToast } from '../../ds';
@@ -13,6 +13,7 @@ export function MockScreen() {
   const nav = useNavigate();
   const toast = useToast();
   const [test, setTest] = useState<Test | null>(null);
+  const [me, setMe] = useState<Profile | null>(null);
   const [items, setItems] = useState<MockItem[] | null>(null);
   const [answers, setAnswers] = useState<{ typed: string }[]>([]);
   const answersRef = useRef<{ typed: string }[]>([]); // the view can fire twice before React re-renders; the ref keeps one answer per item
@@ -20,14 +21,14 @@ export function MockScreen() {
   const [startedAt] = useState(() => new Date().toISOString());
 
   useEffect(() => {
-    Promise.all([repo.getTest(testId), repo.listWords(testId)]).then(([t, words]) => {
-      setTest(t);
+    Promise.all([repo.getTest(testId), repo.listWords(testId), repo.getMyProfile()]).then(([t, words, my]) => {
+      setTest(t); setMe(my);
       setItems(t.format ? buildMock(t.format, words) : []);
     }).catch((e: Error) => toast(e.message, 'bad'));
   }, [testId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function answer(typed: string) {
-    if (!items || !test?.format || answersRef.current.length >= items.length) return;
+    if (!items || !test?.format || !me || answersRef.current.length >= items.length) return;
     const next = [...answersRef.current, { typed }];
     answersRef.current = next;
     setAnswers(next);
@@ -36,14 +37,14 @@ export function MockScreen() {
     setResult(r);
     // wrong sentences drop to level 2 and are due now; the attempt is saved as a mock session; a passed mock earns a crown
     try {
-      const states = new Map((await repo.listWordStates(testId)).map((s) => [s.wordId, s]));
+      const states = new Map((await repo.listWordStates(testId, me.id)).map((s) => [s.wordId, s]));
       for (const it of r.items.filter((x) => !x.correct)) {
-        const s: WordState = states.get(it.word.id) ?? newState(it.word.id, new Date());
+        const s: WordState = states.get(it.word.id) ?? newState(it.word.id, new Date(), me.id);
         await repo.saveWordState({ ...s, box: Math.min(s.box, 2), dueAt: new Date().toISOString(), streak: 0, lastResult: false });
       }
-      await repo.addSession({ profileId: test.profileId, kind: 'mock', unitId: null, startedAt, score: r.score, maxScore: r.maxScore, items: r.items.map((x) => ({ testId, word_id: x.word.id, type: x.ex.type, typed: x.typed, correct: x.correct, points: x.points, earned: x.earned, passed: r.passed })) });
+      await repo.addSession({ profileId: me.id, kind: 'mock', unitId: null, startedAt, score: r.score, maxScore: r.maxScore, items: r.items.map((x) => ({ testId, word_id: x.word.id, type: x.ex.type, typed: x.typed, correct: x.correct, points: x.points, earned: x.earned, passed: r.passed })) });
       if (r.passed) {
-        const crown: Award = { id: '', profileId: test.profileId, kind: 'crown', refId: testId, ref: 'mock', value: 1, awardedAt: new Date().toISOString() };
+        const crown: Award = { id: '', profileId: me.id, kind: 'crown', refId: testId, ref: 'mock', value: 1, awardedAt: new Date().toISOString() };
         await repo.saveAward(crown);
       }
     } catch (e) { toast((e as Error).message, 'bad'); }

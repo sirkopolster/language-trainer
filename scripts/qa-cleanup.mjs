@@ -12,7 +12,7 @@ export async function qaCleanup() {
   const { data: profiles } = await sb.from('profiles').select('id');
   if (profiles?.length) await sb.from('profiles').delete().in('id', profiles.map((p) => p.id));
   console.log(`qa-cleanup: ${paths.length} photos, ${profiles?.length ?? 0} profiles removed`);
-  await sb.auth.signOut();
+  await sb.auth.signOut({ scope: 'local' }); // global sign-out would kill the browser session of the same QA user
 }
 
 if (process.argv[1]?.endsWith('qa-cleanup.mjs')) await qaCleanup();

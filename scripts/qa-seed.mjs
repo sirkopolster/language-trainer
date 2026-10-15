@@ -23,7 +23,7 @@ export async function qaSeed({ levels = [] } = {}) {
   const { data: unit } = await sb.from('units').insert({ test_id: test.id, label: 'Unit 1' }).select().single();
   const { data: words } = await sb.from('words').insert(SENTENCES.map(([source, target], i) => ({ unit_id: unit.id, source, target, status: 'active', priority: i === 2 }))).select();
   const past = new Date(Date.now() - 3600_000).toISOString();
-  if (levels.length) await sb.from('word_state').insert(levels.map((box, i) => ({ word_id: words[i].id, box, due_at: past })));
-  await sb.auth.signOut();
+  if (levels.length) await sb.from('word_state').insert(levels.map((box, i) => ({ word_id: words[i].id, profile_id: prof.id, box, due_at: past })));
+  await sb.auth.signOut({ scope: 'local' }); // global sign-out would kill the browser session of the same QA user
   return { profileId: prof.id, testId: test.id, unitId: unit.id, wordIds: words.map((w) => w.id) };
 }

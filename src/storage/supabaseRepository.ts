@@ -5,7 +5,7 @@ import type { Repository } from './repository';
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL as string, import.meta.env.VITE_SUPABASE_ANON_KEY as string);
 
 type ProfileRow = { id: string; user_id: string; admin_id: string | null; name: string; email: string | null; settings: { keep_photos?: boolean }; created_at: string };
-type TestRow = { id: string; profile_id: string; name: string; lang_from: string; lang_to: string; test_date: string | null; format: Test['format']; topics: string[] | null; status: Test['status']; created_at: string };
+type TestRow = { id: string; profile_id: string; name: string; lang_from: string; lang_to: string; test_date: string | null; format: Test['format']; topics: string[] | null; status: Test['status']; result_score: number | string | null; result_max: number | string | null; created_at: string };
 
 type UnitRow = { id: string; test_id: string; label: string; sort: number; kind: Unit['kind'] };
 type WordRow = { id: string; unit_id: string; source: string; target: string; example: string | null; priority: boolean; status: Word['status']; units?: { kind?: Unit['kind'] } };
@@ -20,7 +20,7 @@ const callAdmin = async (body: Record<string, unknown>) => {
   if (data?.error) throw new Error(data.error);
   return data;
 };
-const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name: r.name, langFrom: r.lang_from, langTo: r.lang_to, testDate: r.test_date, format: r.format, topics: r.topics ?? null, status: r.status, createdAt: r.created_at });
+const toTest = (r: TestRow): Test => ({ id: r.id, profileId: r.profile_id, name: r.name, langFrom: r.lang_from, langTo: r.lang_to, testDate: r.test_date, format: r.format, topics: r.topics ?? null, status: r.status, result: r.result_score !== null && r.result_max !== null ? { score: Number(r.result_score), max: Number(r.result_max) } : null, createdAt: r.created_at });
 
 const toUnit = (r: UnitRow): Unit => ({ id: r.id, testId: r.test_id, label: r.label, sort: r.sort, kind: r.kind ?? 'vocab' });
 const toWord = (r: WordRow): Word => ({ id: r.id, unitId: r.unit_id, source: r.source, target: r.target, example: r.example, priority: r.priority, status: r.status, kind: r.units?.kind ?? 'vocab' });
@@ -132,6 +132,7 @@ export const supabaseRepository: Repository = {
     if (p.name !== undefined) row.name = p.name;
     if (p.testDate !== undefined) row.test_date = p.testDate;
     if (p.topics !== undefined) row.topics = p.topics;
+    if (p.result !== undefined) { row.result_score = p.result?.score ?? null; row.result_max = p.result?.max ?? null; if (p.result) row.status = 'done'; }
     const { error } = await supabase.from('tests').update(row).eq('id', id);
     fail(error);
   },

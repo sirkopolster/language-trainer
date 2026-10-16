@@ -6,7 +6,9 @@ export type Role = 'admin' | 'student';
 export interface Account { role: Role; name: string; email: string }
 
 export type TestStatus = 'setup' | 'active' | 'done';
-export interface Test { id: string; profileId: string; name: string; langFrom: string; langTo: string; testDate: string | null; format: TestFormat | null; /** what the test covers; null = never prefilled */ topics: string[] | null; status: TestStatus; createdAt: string }
+/** real result entered after the test day (D-022): score out of max */
+export interface TestResult { score: number; max: number }
+export interface Test { id: string; profileId: string; name: string; langFrom: string; langTo: string; testDate: string | null; format: TestFormat | null; /** what the test covers; null = never prefilled */ topics: string[] | null; status: TestStatus; result: TestResult | null; createdAt: string }
 
 export type SectionType = 'translate' | 'gap' | 'choice' | 'match' | 'other';
 export interface TestSection { type: SectionType; direction: string; items: number; points: number; label?: string }

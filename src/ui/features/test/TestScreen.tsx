@@ -6,7 +6,8 @@ import { MAX_STARS, PARTS, lessonProgress, splitLessons } from '../../../domain/
 import { readiness } from '../../../domain/mock';
 import { SPECIAL, type SpecialKind } from '../../../domain/grammar';
 import { fmtDate } from './NewTestModal';
-import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, ColorIcon, CrownIcon, EddieSays, EmptyState, FileTextIcon, GraduationIcon, List, ListItem, Modal, PencilIcon, RocketIcon, SproutIcon, StarIcon, TabBar, TestIcon, TrophyIcon, useToast } from '../../ds';
+import { AppBar, BackIcon, Button, Card, ClipboardCheckIcon, ColorIcon, CrownIcon, EddieSays, EmptyState, FileTextIcon, GraduationIcon, Input, List, ListItem, Modal, PencilIcon, RocketIcon, SproutIcon, StarIcon, TabBar, TestIcon, TrophyIcon, useToast } from '../../ds';
+import { daysUntil, fmtNum, resultLine } from './TestCard';
 import { SettingsTab } from './SettingsTab';
 
 const SECTION_LABEL: Record<string, string> = { translate: 'Übersetzen', gap: 'Lückentext', choice: 'Auswahl', match: 'Zuordnen', other: 'Sonstige' };
@@ -84,6 +85,7 @@ export function TestScreen() {
     <>
       <AppBar title={title} left={<button className="iconbtn" aria-label="Zurück" onClick={() => nav('/')}><BackIcon /></button>} />
       <main className="page stack" style={{ paddingBottom: 'calc(var(--s-5) * 3)' }}>
+        {test && tab && (test.result || (daysUntil(test.testDate) ?? 0) < 0) && <ResultCard test={test} onChange={setTest} />}
         {tab === 'einstellungen' && lessons && <EddieSays>{lessons.words.length === 0 ? 'Lade die Vokabelseiten und einen alten Test hoch, dann lese ich alles ein.' : 'Hier kannst du Fotos ergänzen, Themen eintragen und die Sätze prüfen.'}</EddieSays>}
         {tab === 'einstellungen' && test && lessons && <SettingsTab test={test} words={lessons.words} onTestChange={setTest} onWordsChange={load} />}
         {tab === 'lernen' && lessons && (
@@ -185,5 +187,41 @@ function ProbetestTab({ test, secureShare, mocks, onStart }: { test: Test; testI
         </Card>
       )}
     </>
+  );
+}
+
+/** D-022: after the test day the learner enters the real result as "x von y"; y is prefilled from the test format. Editable afterwards. */
+function ResultCard({ test, onChange }: { test: Test; onChange: (t: Test) => void }) {
+  const toast = useToast();
+  const [editing, setEditing] = useState(!test.result);
+  const [score, setScore] = useState(test.result ? String(test.result.score) : '');
+  const [max, setMax] = useState(String(test.result?.max ?? test.format?.totalPoints ?? ''));
+  const num = (v: string) => Number(v.replace(',', '.'));
+  const valid = score.trim() !== '' && max.trim() !== '' && Number.isFinite(num(score)) && Number.isFinite(num(max)) && num(max) > 0 && num(score) >= 0 && num(score) <= num(max);
+  async function save() {
+    if (!valid) return;
+    const result = { score: num(score), max: num(max) };
+    try { await repo.updateTest(test.id, { result }); onChange({ ...test, result, status: 'done' }); setEditing(false); toast('Ergebnis gespeichert', 'good', 1500); }
+    catch (e) { toast((e as Error).message, 'bad'); }
+  }
+  if (!editing && test.result) {
+    const share = test.result.score / test.result.max;
+    return (
+      <Card accent>
+        <div className="row"><ColorIcon color={share >= 0.8 ? 'yellow' : 'orange'} large><TrophyIcon /></ColorIcon><div className="grow"><div className="h3" data-testid="result-line">{resultLine(test.result)}</div><div className="text-sm muted">{share >= 0.9 ? 'Spitze! Eddie ist mächtig stolz.' : share >= 0.6 ? 'Gut gemacht. Beim nächsten Test geht noch mehr.' : 'Nicht traurig sein, nächstes Mal packst du es.'}</div></div><Button small variant="secondary" data-testid="result-edit" onClick={() => setEditing(true)}>Ändern</Button></div>
+      </Card>
+    );
+  }
+  return (
+    <Card accent title="Wie ist der Test gelaufen?">
+      <p className="text-sm muted" style={{ marginTop: 0 }}>Trag dein Ergebnis ein, so wie es auf dem Test steht.</p>
+      <div className="row" style={{ alignItems: 'flex-end' }}>
+        <Input label="Punkte" type="number" inputMode="decimal" min={0} step="0.5" data-testid="result-score" value={score} onChange={(e) => setScore(e.target.value)} />
+        <span style={{ paddingBottom: 'var(--s-3)' }}>von</span>
+        <Input label="Maximal" type="number" inputMode="decimal" min={0.5} step="0.5" data-testid="result-max" value={max} onChange={(e) => setMax(e.target.value)} />
+      </div>
+      {valid && <div className="text-sm muted">{`${fmtNum(num(score))} von ${fmtNum(num(max))} Punkten`}</div>}
+      <div className="row" style={{ marginTop: 'var(--s-2)' }}><Button data-testid="result-save" disabled={!valid} onClick={save}>Ergebnis speichern</Button>{test.result && <Button variant="ghost" onClick={() => setEditing(false)}>Abbrechen</Button>}</div>
+    </Card>
   );
 }

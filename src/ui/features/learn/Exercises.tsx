@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import type { Choice, Exercise, Gaps, Tiles, Write } from '../../../domain/exercises';
 import { fillGaps, isPunct, joinTokens } from '../../../domain/exercises';
 import { SPECIAL } from '../../../domain/grammar';
-import { Button, BulbIcon } from '../../ds';
+import { Button, BulbIcon, EddieSays } from '../../ds';
 
 /** What to do, in the learner's words: replaces direction labels. */
 export function instruction(ex: Exercise): string {
@@ -35,10 +35,10 @@ export function ExerciseView({ ex, locked, hint, onHint, onAnswer }: { ex: Exerc
   const [asking, setAsking] = useState(false);
   return (
     <div className="stack">
+      <EddieSays size={48}><span data-testid="dir">{instruction(ex)}</span></EddieSays>
       <div className="card card-flat">
         <div className="row-between">
           <div className="grow">
-            <div className="text-sm muted" data-testid="dir">{instruction(ex)}</div>
             <div className="h2" data-testid="prompt">{ex.prompt}</div>
           </div>
           {hint && !locked && <button type="button" className={`iconbtn${shown ? ' iconbtn-on' : ''}`} data-testid="hint" aria-label="Tipp" onClick={() => { if (!shown) setAsking(true); }}><BulbIcon /></button>}

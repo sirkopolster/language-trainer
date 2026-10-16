@@ -26,6 +26,9 @@ export function instruction(ex: Exercise): string {
   }
 }
 
+/** D-022: after a mistake in a special part — the reason for the picked option, else the grammar rule. Null for vocabulary. */
+export const explanation = (ex: Exercise, typed: string): string | null => (ex.type === 'choice' && ex.why?.[typed]) || ex.rule || null;
+
 /** One exercise = prompt + answer input. Calls onAnswer with the learner's sentence (or option). Locked after answering. */
 export function ExerciseView({ ex, locked, hint, onHint, onAnswer }: { ex: Exercise; locked: boolean; /** show a bulb that reveals the answer (level 0) */ hint?: boolean; onHint?: () => void; onAnswer: (typed: string) => void }) {
   const [shown, setShown] = useState(false);

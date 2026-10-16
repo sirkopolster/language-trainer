@@ -6,7 +6,7 @@ import { compare, type Comparison } from '../../../domain/compare';
 import { applyAnswer, composeSession, exerciseFor, requeueIndex, type SessionItem } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
 import { AppBar, Button, Card, CloseIcon, EmptyState, ProgressBar, StarIcon, useToast } from '../../ds';
-import { ExerciseView } from './Exercises';
+import { ExerciseView, explanation } from './Exercises';
 
 type Step = { item: SessionItem; ex: Exercise; retry: boolean };
 const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'warn' | 'bad' }> = {
@@ -30,6 +30,7 @@ export function LearnScreen() {
   const [queue, setQueue] = useState<Step[] | null>(null);
   const [done, setDone] = useState<{ correct: number; total: number; climbed: number }>({ correct: 0, total: 0, climbed: 0 });
   const [feedback, setFeedback] = useState<Comparison | null>(null);
+  const [lastTyped, setLastTyped] = useState('');
   const [startedAt] = useState(() => new Date());
   const [log, setLog] = useState<{ word_id: string; level: number; type: string; correct: boolean; typed: string }[]>([]);
 
@@ -51,7 +52,7 @@ export function LearnScreen() {
   function answer(typed: string) {
     if (!step || feedback) return;
     const c = step.ex.type === 'choice' ? (typed === step.ex.answer ? compare(step.ex.answer, step.ex.answer) : { ...compare(typed, step.ex.answer), result: 'wrong' as const, correct: false }) : compare(typed, step.ex.answer);
-    setFeedback(c);
+    setFeedback(c); setLastTyped(typed);
     setLog((l) => [...l, { word_id: step.item.word.id, level: step.item.state.box, type: step.ex.type, correct: c.correct, typed }]);
     if (step.retry) return; // the retype after a wrong answer does not change the level
     const next = applyAnswer(step.item.state, c.correct, step.item.word.priority, new Date());
@@ -107,6 +108,7 @@ export function LearnScreen() {
           <Card className={`feedback feedback-${fb.tone}`}>
             <div className="h3" data-testid="feedback">{fb.title}</div>
             {feedback.result !== 'exact' && <p className="text-md" style={{ margin: 'var(--s-2) 0 0' }}>{feedback.diff.map((d, i) => <span key={i} className={d.kind === 'bad' ? 'diff-bad' : undefined}>{d.text} </span>)}</p>}
+            {!feedback.correct && step && explanation(step.ex, lastTyped) && <p className="text-sm" data-testid="explain" style={{ margin: 'var(--s-2) 0 0' }}>{explanation(step.ex, lastTyped)}</p>}
             <Button block data-testid="next" onClick={proceed} autoFocus>{feedback.correct ? 'Weiter' : 'Nochmal tippen'}</Button>
           </Card>
         )}

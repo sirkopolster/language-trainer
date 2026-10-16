@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { compare, levenshtein, normalize } from './compare';
 import { applyAnswer, composeSession, exerciseFor, newState } from './scheduler';
-import { fillGaps, joinTokens, makeChoice, makeGaps, makeTiles, tokenize } from './exercises';
+import { fillGaps, joinTokens, makeChoice, makeGaps, makeTiles, makeWrite, special, tokenize } from './exercises';
 import type { Word } from './types';
 
 const now = new Date('2026-10-13T18:00:00Z');
@@ -118,5 +118,40 @@ describe('exercises', () => {
     const inputs = g.tokens.map((t) => (t.gap ? t.text : ''));
     expect(fillGaps(g, inputs)).toBe('The elephant is big.');
     expect(makeGaps(pool[0], false, seq(0.1)).tokens.filter((t) => t.gap).every((t) => !t.hint)).toBe(true);
+  });
+});
+
+describe('special parts (D-022): choice options are variations of the answer, mistakes get a reason', () => {
+  const neg: Word = { id: 'n1', unitId: 'un', source: 'We had fresh milkshakes.', target: 'We did not have fresh milkshakes.', example: 'Wir hatten frische Milchshakes.', priority: false, status: 'active', kind: 'negation' };
+  const neg2: Word = { ...neg, id: 'n2', source: 'She likes the zoo.', target: 'She does not like the zoo.' };
+  const tense: Word = { id: 't1', unitId: 'ut', source: 'We visit the zoo.', target: 'We visited the zoo.', example: 'Wir besuchen den Zoo.', priority: false, status: 'active', kind: 'tense' };
+  const tense2: Word = { ...tense, id: 't2', source: 'He goes home.', target: 'He went home.' };
+  it('negation forward: missing did, wrong verb form, wrong tense, no instead of not', () => {
+    const texts = special(neg, 'de-en').variants.map((v) => v.text);
+    expect(texts).toEqual(['We not have fresh milkshakes.', 'We did not had fresh milkshakes.', 'We do not have fresh milkshakes.', 'We did no have fresh milkshakes.']);
+    expect(special(neg, 'de-en').rule).toContain('did not have');
+  });
+  it('negation backward: variants never equal the answer or the prompt', () => {
+    const { variants, rule } = special(neg, 'en-de');
+    expect(variants.map((v) => v.text)).toEqual(['We did have fresh milkshakes.', 'We have fresh milkshakes.', 'We not had fresh milkshakes.', 'We did had fresh milkshakes.']);
+    expect(rule).toContain('had');
+  });
+  it('tense forward: did + past, present perfect, regular -ed on an irregular verb', () => {
+    expect(special(tense2, 'de-en').variants.map((v) => v.text)).toEqual(['He did went home.', 'He has went home.', 'He goed home.']); // the present form equals the prompt and is dropped
+    expect(special(tense, 'de-en').variants.map((v) => v.text)).toEqual(['We did visited the zoo.', 'We have visited the zoo.', 'We were visiting the zoo.']);
+  });
+  it('tense backward: third-person -s, is/are + verb, -ing', () => {
+    expect(special(tense2, 'en-de').variants.map((v) => v.text)).toEqual(['He go home.', 'He is go home.', 'He going home.']); // the past form equals the prompt and is dropped
+  });
+  it('choice uses the variants first and carries a reason per wrong option; vocabulary is untouched', () => {
+    const c = makeChoice(neg, [neg, neg2], () => 0.4, 'de-en');
+    expect(c.options).toHaveLength(4);
+    expect(c.options).toContain(neg.target);
+    expect(c.options).not.toContain(neg2.target);
+    for (const o of c.options.filter((o) => o !== c.answer)) expect(c.why?.[o]).toBeTruthy();
+    expect(makeWrite(tense, 'de-en').rule).toContain('visited');
+    const plain = makeChoice(w('a', 'The cat sleeps.'), [w('a', 'The cat sleeps.'), w('b', 'The dog runs.')], () => 0.1);
+    expect(plain.why).toBeUndefined();
+    expect(plain.rule).toBeUndefined();
   });
 });

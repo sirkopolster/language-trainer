@@ -7,7 +7,7 @@ import { applyAnswer, newState, requeueIndex } from '../../../domain/scheduler';
 import { makeChoice, makeGaps, makeTiles, makeWrite, type Direction, type Exercise } from '../../../domain/exercises';
 import { HALVES, MAX_STARS, PARTS, lessonProgress, lessonRef, partRef, roundOrder, splitLessons, starsFor, type Lesson } from '../../../domain/lessons';
 import { AppBar, Button, Card, Chevron, CloseIcon, CrownIcon, EddieSays, Modal, ProgressBar, StarIcon, useMediaQuery, useToast } from '../../ds';
-import { ExerciseView } from './Exercises';
+import { ExerciseView, explanation } from './Exercises';
 
 const FEEDBACK: Record<Comparison['result'], { title: string; tone: 'good' | 'warn' | 'bad' }> = {
   exact: { title: 'Richtig!', tone: 'good' },
@@ -38,6 +38,7 @@ export function LessonScreen() {
   const [awards, setAwards] = useState<Award[]>([]);
   const [states, setStates] = useState<Map<string, WordState>>(new Map());
   const [phase, setPhase] = useState<Phase>({ kind: 'plan' });
+  const [lastTyped, setLastTyped] = useState('');
   const [log, setLog] = useState<unknown[]>([]);
   const [confirmReset, setConfirmReset] = useState(false);
   const wide = useMediaQuery('(min-width: 768px)');
@@ -64,6 +65,7 @@ export function LessonScreen() {
 
   function answer(typed: string) {
     if (phase.kind !== 'run' || phase.feedback) return;
+    setLastTyped(typed);
     const step = phase.queue[0];
     const c = step.ex.type === 'choice' ? (typed === step.ex.answer ? compare(typed, typed) : { ...compare(typed, step.ex.answer), result: 'wrong' as const, correct: false }) : compare(typed, step.ex.answer);
     setLog((l) => [...l, { word_id: step.word.id, part: PARTS[phase.part].type, correct: c.correct, typed, hint: phase.hintUsed }]);
@@ -192,6 +194,7 @@ export function LessonScreen() {
           <Card className={`feedback feedback-${fb.tone}`}>
             <div className="h3" data-testid="feedback">{fb.title}</div>
             {phase.feedback.result !== 'exact' && <p className="text-md" style={{ margin: 'var(--s-2) 0 0' }}>{phase.feedback.diff.map((d, i) => <span key={i} className={d.kind === 'bad' ? 'diff-bad' : undefined}>{d.text} </span>)}</p>}
+            {!phase.feedback.correct && explanation(step.ex, lastTyped) && <p className="text-sm" data-testid="explain" style={{ margin: 'var(--s-2) 0 0' }}>{explanation(step.ex, lastTyped)}</p>}
             <Button block data-testid="next" onClick={proceed} autoFocus>{phase.feedback.correct ? 'Weiter' : 'Nochmal tippen'}</Button>
           </Card>
         )}

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Award, Test, Unit, Word } from '../../../domain/types';
 import { MAX_STARS, lessonProgress, splitLessons } from '../../../domain/lessons';
-import { CrownIcon, FlameIcon, GraduationIcon, RocketIcon, SproutIcon, StarIcon, TestIcon, TrophyIcon } from '../../ds';
+import { CrownIcon, FlameIcon, GraduationIcon, PencilIcon, RocketIcon, SproutIcon, StarIcon, TestIcon, TrophyIcon } from '../../ds';
 import type { SessionSummary } from '../../../domain/stats';
 import { fmtDate } from './NewTestModal';
 
@@ -22,9 +22,23 @@ export function testProgress(t: Test, units: Unit[], words: Word[], awards: Awar
   return { parts: lessons.length, done, stars, crowns, days, answers, maxStars: lessons.length * MAX_STARS };
 }
 
-export type TestStatusLabel = 'new' | 'started' | 'done';
-export const testStatus = (p: ReturnType<typeof testProgress>): TestStatusLabel => (p.parts > 0 && p.done === p.parts ? 'done' : p.days > 0 || p.answers > 0 || p.stars > 0 ? 'started' : 'new');
-const STATUS = { new: { label: 'Noch nicht angefangen', color: 'blue' as const, icon: <SproutIcon /> }, started: { label: 'Angefangen', color: 'orange' as const, icon: <RocketIcon /> }, done: { label: 'Abgeschlossen', color: 'yellow' as const, icon: <TrophyIcon /> } };
+export type TestStatusLabel = 'new' | 'started' | 'done' | 'enter' | 'result';
+/** D-022: after the test day the card asks for the result ("Ergebnis eingeben"); once entered it shows "Ergebnis x von y". Before that: learning progress. */
+export const testStatus = (p: ReturnType<typeof testProgress>, test?: Test): TestStatusLabel => {
+  if (test?.result) return 'result';
+  const d = test ? daysUntil(test.testDate) : null;
+  if (d !== null && d < 0) return 'enter';
+  return p.parts > 0 && p.done === p.parts ? 'done' : p.days > 0 || p.answers > 0 || p.stars > 0 ? 'started' : 'new';
+};
+export const fmtNum = (n: number) => n.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+export const resultLine = (r: { score: number; max: number }) => `Ergebnis ${fmtNum(r.score)} von ${fmtNum(r.max)}`;
+const STATUS = {
+  new: { label: 'Noch nicht angefangen', color: 'blue' as const, icon: <SproutIcon /> },
+  started: { label: 'Angefangen', color: 'orange' as const, icon: <RocketIcon /> },
+  done: { label: 'Abgeschlossen', color: 'yellow' as const, icon: <TrophyIcon /> },
+  enter: { label: 'Ergebnis eingeben', color: 'orange' as const, icon: <PencilIcon /> },
+  result: { label: 'Ergebnis', color: 'yellow' as const, icon: <TrophyIcon /> },
+};
 
 /** Home card: name large, test date, status, and only what was accomplished already (nothing shown while it is zero). */
 export function TestCard({ test, sub, progress, onClick }: { test: Test; sub?: ReactNode; progress: ReturnType<typeof testProgress>; onClick: () => void }) {
@@ -39,7 +53,7 @@ export function TestCard({ test, sub, progress, onClick }: { test: Test; sub?: R
     <button type="button" className="testcard" data-testid={`test-${test.id}`} onClick={onClick}>
       <div className="row-between">
         <div className="testcard-name grow">{test.name}</div>
-        <span className={`statuspill statuspill-${STATUS[testStatus(progress)].color}`} data-testid="test-status"><span className="statuspill-icon">{STATUS[testStatus(progress)].icon}</span>{STATUS[testStatus(progress)].label}</span>
+        {(() => { const st = STATUS[testStatus(progress, test)]; return <span className={`statuspill statuspill-${st.color}`} data-testid="test-status"><span className="statuspill-icon">{st.icon}</span>{test.result ? resultLine(test.result) : st.label}</span>; })()}
       </div>
       <div className="text-sm muted testcard-date">{dateLine(test)}{sub ? <> · {sub}</> : null}</div>
       {chips.length > 0 && <div className="row" style={{ flexWrap: 'wrap' }}>{chips.map((c) => <span key={c.text} className="chip"><span className="chip-icon">{c.icon}</span>{c.text}</span>)}</div>}
